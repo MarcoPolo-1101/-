@@ -1620,11 +1620,16 @@
                         
                         // 使用全局变量
                         this.client = window.supabase.createClient(this.config.url, this.config.anonKey, { auth: { persistSession: false } });
+                        
+                        // 立即初始化认证和数据库
+                        this.auth = this.client.auth;
+                        this.db = this.client.from;
+                        console.log('使用备用CDN成功初始化Supabase客户端');
+                    } else {
+                        // 正常情况下也确保初始化
+                        this.auth = this.client.auth;
+                        this.db = this.client.from;
                     }
-                    
-                    // 初始化认证和数据库
-                    this.auth = this.client.auth;
-                    this.db = this.client.from;
                     
                     // 验证连接 - 使用简单的表查询来验证连接
                     try {
