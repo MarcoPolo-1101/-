@@ -1657,7 +1657,7 @@
                     const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
                     
                     // 创建 Supabase 客户端
-                    this.client = createClient(this.config.url, this.config.anonKey);
+                    this.client = createClient(this.config.url, this.config.anonKey, { auth: { persistSession: false } });
                     
                     // 初始化认证和数据库
                     this.auth = this.client.auth;
@@ -4486,4 +4486,3 @@
 
 
 </body></html>
-
