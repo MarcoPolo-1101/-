@@ -1728,13 +1728,14 @@
                     const { data, error } = await this.auth.getUser();
                     
                     if (error) {
-                        throw new Error(error.message);
+                        console.warn('获取当前用户失败，但这是预期的（无会话）:', error.message);
+                        return null;
                     }
                     
                     return data.user;
                 } catch (error) {
-                    console.error('获取当前用户失败:', error.message);
-                    throw error;
+                    console.warn('获取当前用户时发生错误:', error.message);
+                    return null;
                 }
             }
             
