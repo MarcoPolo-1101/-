@@ -238,7 +238,7 @@
 </head>
 <body class="bg-light-1 font-sans">
     <!-- 登录页面 -->
-    <div id="login-page" class="login-bg flex items-center justify-center min-h-screen" style="background-size: cover; background-position: center; background-repeat: no-repeat;">
+    <div id="login-page" class="login-bg flex items-center justify-center min-h-screen" style="background: linear-gradient(135deg, #165DFF 0%, #0FC6C2 100%);">
         <div class="bg-white rounded-lg shadow-lg p-8 w-full max-w-md">
             <div class="text-center mb-8">
                 <h1 class="text-2xl font-bold text-dark">Marco Polo 管理系统</h1>
@@ -249,31 +249,22 @@
             <form id="login-form" class="space-y-6">
                 <div>
                     <label for="username" class="form-label">用户名</label>
-                    <input type="text" id="username" name="username" class="input-field" placeholder="请输入用户名" required="">
+                    <input type="text" id="username" name="username" class="input-field" placeholder="请输入用户名" required="" value="boss">
                 </div>
                 
                 <div>
                     <label for="password" class="form-label">密码</label>
-                    <input type="password" id="password" name="password" class="input-field" placeholder="请输入密码" required="">
+                    <input type="password" id="password" name="password" class="input-field" placeholder="请输入密码" required="" value="123456">
                 </div>
                 
-                
-                
                 <div>
-                    <button type="submit" class="w-full btn-primary flex justify-center items-center">
+                    <button type="submit" id="login-button" class="w-full btn-primary flex justify-center items-center h-10 rounded-md bg-blue-600 hover:bg-blue-700 transition-colors">
                         <span>登录</span>
                     </button>
                 </div>
-                
-                <div class="text-center text-sm text-dark-3 mt-4">
-                    <p>
-</p>
-                    <p>
-</p>
-                </div>
             </form>
             
-            <div id="login-error" class="mt-4 text-danger text-sm hidden">
+            <div id="login-error" class="mt-4 text-danger text-sm hidden text-center">
                 <span>用户名或密码错误，请重试</span>
             </div>
         </div>
@@ -2183,6 +2174,9 @@
                 useLocalStorage = true;
                 console.log('应用将使用本地存储模式运行，避免所有Supabase请求');
                 
+                // 初始化默认用户数据
+                initializeDefaultUsers();
+                
                 // 加载保存的背景设置
                 loadBackgroundSetting();
                 
@@ -2210,6 +2204,41 @@
                 showNotification('初始化失败', '应用初始化时发生错误', 'error');
                 showLoginPage();
             }
+        }
+        
+        // 初始化默认用户数据
+        function initializeDefaultUsers() {
+            // 从本地存储加载用户数据
+            const storedUsers = localStorage.getItem('users');
+            
+            if (storedUsers) {
+                users = JSON.parse(storedUsers);
+            } else {
+                // 如果没有用户数据，创建默认管理员用户
+                users = [
+                    {
+                        id: '1',
+                        username: 'boss',
+                        password: '123456',
+                        name: '系统管理员',
+                        type: 'boss',
+                        status: 'active'
+                    },
+                    {
+                        id: '2',
+                        username: 'user',
+                        password: '123456',
+                        name: '普通用户',
+                        type: 'user',
+                        status: 'active'
+                    }
+                ];
+                
+                // 保存到本地存储
+                localStorage.setItem('users', JSON.stringify(users));
+            }
+            
+            console.log('用户数据初始化完成，共有', users.length, '个用户');
         }
         
         // 初始化 Supabase
