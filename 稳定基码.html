@@ -1,0 +1,4171 @@
+<html lang="zh-CN"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marco Polo 管理系统</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e40af',
+                        secondary: '#64748b',
+                        success: '#059669',
+                        warning: '#d97706',
+                        danger: '#dc2626',
+                        light: '#f3f4f6',
+                        dark: '#1f2937',
+                        'light-1': '#f9fafb',
+                        'light-2': '#e5e7eb',
+                        'dark-1': '#374151',
+                        'dark-2': '#4b5563',
+                        'dark-3': '#6b7280'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    },
+                    boxShadow: {
+                        card: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .transition-all-300 {
+                transition: all 0.3s ease;
+            }
+            .page-transition {
+                transition: opacity 0.3s ease, transform 0.3s ease;
+            }
+            .page-transition.hidden {
+                opacity: 0;
+                transform: translateX(10px);
+            }
+            .badge {
+                @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+            }
+            .badge-primary {
+                @apply bg-primary/10 text-primary;
+            }
+            .badge-secondary {
+                @apply bg-secondary/10 text-secondary;
+            }
+            .badge-success {
+                @apply bg-success/10 text-success;
+            }
+            .badge-warning {
+                @apply bg-warning/10 text-warning;
+            }
+            .badge-danger {
+                @apply bg-danger/10 text-danger;
+            }
+            .btn {
+                @apply inline-flex items-center justify-center px-4 py-2 rounded-md font-medium transition-all-300 focus:outline-none focus:ring-2 focus:ring-offset-2;
+            }
+            .btn-primary {
+                @apply bg-primary text-white hover:bg-primary/90 focus:ring-primary/50;
+            }
+            .btn-secondary {
+                @apply bg-light-2 text-dark-2 hover:bg-light-2/80 focus:ring-dark-2/30;
+            }
+            .btn-success {
+                @apply bg-success text-white hover:bg-success/90 focus:ring-success/50;
+            }
+            .btn-warning {
+                @apply bg-warning text-white hover:bg-warning/90 focus:ring-warning/50;
+            }
+            .btn-danger {
+                @apply bg-danger text-white hover:bg-danger/90 focus:ring-danger/50;
+            }
+            .input-field {
+                @apply w-full px-3 py-2 border border-light-2 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all-300;
+            }
+            .form-label {
+                @apply block text-sm font-medium text-dark-2 mb-1;
+            }
+            .form-group {
+                @apply mb-4;
+            }
+            .tab {
+                @apply px-4 py-2 text-sm font-medium rounded-md transition-all-300;
+            }
+            .tab:not(.active) {
+                @apply text-dark-3 hover:text-dark-1 hover:bg-light-1;
+            }
+            .tab.active {
+                @apply bg-primary text-white;
+            }
+            .loading-spinner {
+                @apply w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin;
+            }
+        }
+    </style>
+    
+    <!-- 深色模式和主题颜色样式 -->
+    <style>
+        /* 深色模式样式 */
+        .dark-mode {
+            background-color: #374151;
+            color: #f9fafb;
+        }
+        .dark-mode .bg-white {
+            background-color: #4b5563;
+        }
+        .dark-mode .text-dark {
+            color: #f9fafb;
+        }
+        .dark-mode .text-dark-1 {
+            color: #f3f4f6;
+        }
+        .dark-mode .text-dark-2 {
+            color: #e5e7eb;
+        }
+        .dark-mode .text-dark-3 {
+            color: rgba(229, 231, 235, 0.7);
+        }
+        .dark-mode .bg-light-1 {
+            background-color: #6b7280;
+        }
+        .dark-mode .bg-light-2 {
+            background-color: #4b5563;
+        }
+        .dark-mode .border-light-2 {
+            border-color: #6b7280;
+        }
+        .dark-mode .btn-secondary {
+            background-color: #6b7280;
+            color: #e5e7eb;
+        }
+        .dark-mode .btn-secondary:hover {
+            background-color: rgba(107, 114, 128, 0.8);
+        }
+        .dark-mode .input-field {
+            background-color: #4b5563;
+            border-color: #6b7280;
+            color: #f9fafb;
+        }
+        .dark-mode .tab:not(.active) {
+            color: rgba(229, 231, 235, 0.7);
+        }
+        .dark-mode .tab:not(.active):hover {
+            color: #f9fafb;
+            background-color: #6b7280;
+        }
+        
+        /* 主题颜色样式 - 使用CSS变量 */
+        :root {
+            --color-primary: #1e40af;
+            --color-primary-light: #3b82f6;
+            --color-primary-dark: #1e3a8a;
+        }
+        
+        .theme-primary {
+            --color-primary: #1e40af;
+            --color-primary-light: #3b82f6;
+            --color-primary-dark: #1e3a8a;
+        }
+        
+        .theme-secondary {
+            --color-primary: #64748b;
+            --color-primary-light: #94a3b8;
+            --color-primary-dark: #475569;
+        }
+        
+        .theme-success {
+            --color-primary: #059669;
+            --color-primary-light: #10b981;
+            --color-primary-dark: #047857;
+        }
+        
+        .theme-warning {
+            --color-primary: #d97706;
+            --color-primary-light: #f59e0b;
+            --color-primary-dark: #b45309;
+        }
+        
+        .theme-danger {
+            --color-primary: #dc2626;
+            --color-primary-light: #ef4444;
+            --color-primary-dark: #b91c1c;
+        }
+        
+        /* 应用主题颜色 */
+        .btn-primary,
+        .tab.active,
+        .bg-primary {
+            background-color: var(--color-primary) !important;
+        }
+        
+        .text-primary,
+        .badge-primary {
+            color: var(--color-primary) !important;
+        }
+        
+        .focus\:ring-primary\/50:focus {
+            box-shadow: 0 0 0 2px rgba(30, 64, 175, 0.5) !important;
+        }
+        
+        .focus\:border-primary:focus {
+            border-color: var(--color-primary) !important;
+        }
+    </style>
+</head>
+<body class="bg-light min-h-screen">
+    <!-- 登录页面 -->
+    <div id="login-page" class="bg-gradient-to-br from-primary/5 to-primary/10 flex items-center justify-center min-h-screen p-4">
+        <div class="bg-transparent backdrop-blur-xl rounded-lg shadow-lg p-8 w-full max-w-md border border-white/10">
+            <div class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-dark">Marco Polo 管理系统</h1>
+                <p class="text-dark-3 mt-2">高效管理您的瓷砖业务</p>
+            </div>
+            
+            <div id="login-form" class="space-y-6">
+                <div>
+                    <label for="username" class="form-label">用户名</label>
+                    <input type="text" id="username" class="input-field" placeholder="请输入用户名">
+                </div>
+                
+                <div>
+                    <label for="password" class="form-label">密码</label>
+                    <input type="password" id="password" class="input-field" placeholder="请输入密码">
+                </div>
+                
+                <div>
+                    <button type="button" id="login-button" class="w-full btn-primary flex justify-center items-center">
+                        <span>登录</span>
+                    </button>
+                </div>
+                
+                <div class="text-center text-sm text-dark-3 mt-4">
+                    <p>
+</p>
+                </div>
+            </div>
+            
+            <div id="login-error" class="mt-4 text-danger text-sm hidden">
+                <span>用户名或密码错误，请重试</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主应用 -->
+    <div id="app" class="hidden">
+        <!-- 顶部导航栏 -->
+        <header class="bg-white/10 backdrop-blur-xl shadow-sm relative">
+            <div class="container mx-auto px-4 py-3">
+                <!-- 移动端菜单按钮 -->
+                <button id="mobile-menu-toggle" class="md:hidden absolute top-4 left-4 z-30 text-dark-3 hover:text-dark">
+                    <i class="fa fa-bars text-xl"></i>
+                </button>
+
+                
+                <!-- 标题 - 居中显示（移动端左移） -->
+                <div class="absolute top-4 left-1/2 transform -translate-x-1/2 md:left-1/2 md:transform md:-translate-x-1/2 z-20">
+                    <h1 class="text-xl font-bold text-dark" style="font-size: 18px;">Marco Polo 管理系统</h1>
+                </div>
+                
+                <div class="flex flex-col items-center pt-16">
+                    
+                    <!-- 导航菜单 - 响应式布局 -->
+                    <nav id="main-nav" class="flex flex-wrap items-center space-x-1 justify-start w-full md:flex-row md:flex-wrap hidden md:flex">
+                        <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="products-page">
+                            <i class="fa fa-cubes w-5 text-center mr-2"></i>
+                            <span>产品管理</span>
+                        </a>
+                        <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="calculator-page">
+                            <i class="fa fa-calculator w-5 text-center mr-2"></i>
+                            <span>算砖计算器</span>
+                        </a>
+                        <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="users-page">
+                            <i class="fa fa-users w-5 text-center mr-2"></i>
+                            <span>用户管理</span>
+                        </a>
+                        <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="logs-page">
+                            <i class="fa fa-history w-5 text-center mr-2"></i>
+                            <span>操作日志</span>
+                        </a>
+                        <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="settings-page">
+                            <i class="fa fa-cog w-5 text-center mr-2"></i>
+                            <span>系统设置</span>
+                        </a>
+                        <!-- 用户信息 - 移到系统设置后面 -->
+                        <div class="relative ml-4">
+                            <button id="user-menu-btn" class="flex items-center space-x-2 text-dark-3 hover:text-dark">
+                                <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                    <i class="fa fa-user"></i>
+                                </div>
+                                <span id="current-username" class="hidden sm:inline">系统管理员</span>
+                                <i class="fa fa-chevron-down text-xs"></i>
+                            </button>
+                            
+                            <div id="user-menu" class="absolute right-0 mt-2 w-48 bg-white/10 backdrop-blur-xl rounded-md shadow-lg py-1 hidden z-10">
+                                <a href="#" class="block px-4 py-2 text-sm text-dark-2 hover:bg-light-1" id="logout-btn">
+                                    <i class="fa fa-sign-out mr-2"></i> 退出登录
+                                </a>
+                            </div>
+                        </div>
+                    </nav>
+                    
+                    <!-- 移动端下拉菜单 -->
+                    <div id="mobile-nav" class="md:hidden w-full bg-white/10 backdrop-blur-xl rounded-md shadow-md mt-2 hidden">
+                        <div class="p-2 flex flex-col space-y-1">
+                            <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="products-page">
+                                <i class="fa fa-cubes w-5 text-center mr-2"></i>
+                                <span>产品管理</span>
+                            </a>
+                            <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="calculator-page">
+                                <i class="fa fa-calculator w-5 text-center mr-2"></i>
+                                <span>算砖计算器</span>
+                            </a>
+                            <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="users-page">
+                                <i class="fa fa-users w-5 text-center mr-2"></i>
+                                <span>用户管理</span>
+                            </a>
+                            <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="logs-page">
+                                <i class="fa fa-history w-5 text-center mr-2"></i>
+                                <span>操作日志</span>
+                            </a>
+                            <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="settings-page">
+                                <i class="fa fa-cog w-5 text-center mr-2"></i>
+                                <span>系统设置</span>
+                            </a>
+                            <!-- 移动端用户信息 -->
+                            <div class="relative mt-2 pt-2 border-t border-light-2">
+                                <button id="mobile-user-menu-btn" class="flex items-center space-x-2 text-dark-3 hover:text-dark w-full justify-start px-4 py-2 rounded-md hover:bg-light-1">
+                                    <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                                        <i class="fa fa-user"></i>
+                                    </div>
+                                    <span id="mobile-current-username" class="hidden sm:inline">系统管理员</span>
+                                    <i class="fa fa-chevron-down text-xs ml-auto"></i>
+                                </button>
+                                
+                                <div id="mobile-user-menu" class="absolute left-0 right-0 mt-1 w-full bg-white/10 backdrop-blur-xl rounded-md shadow-lg py-1 hidden z-10">
+                                    <a href="#" class="block px-4 py-2 text-sm text-dark-2 hover:bg-light-1" id="mobile-logout-btn">
+                                        <i class="fa fa-sign-out mr-2"></i> 退出登录
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+            
+            <!-- 主内容区 -->
+            <main class="flex-1 p-4 sm:p-6 transition-all duration-300">
+                <div class="container mx-auto">
+                    <!-- 产品管理页面 -->
+                    <div id="products-page" class="page-transition hidden">
+                        <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-dark">产品管理</h2>
+                                <p class="text-dark-3 mt-1">管理您的瓷砖产品</p>
+                            </div>
+                            
+                            <div class="flex flex-wrap gap-3">
+                                <div class="relative">
+                                    <input type="text" id="product-search" class="input-field pl-10" placeholder="搜索产品...">
+
+                                </div>
+                                
+                                <button id="add-product-btn" class="btn-primary">
+                                    <i class="fa fa-plus mr-2"></i> 添加产品
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 产品列表 -->
+                        <div id="products-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <!-- 产品卡片将通过JS动态生成 -->
+                        </div>
+                        
+                        <!-- 无产品提示 -->
+                        <div id="no-products" class="text-center py-12 bg-white rounded-lg shadow-sm hidden">
+                            <div class="text-6xl text-light-2 mb-4">
+                                <i class="fa fa-cubes"></i>
+                            </div>
+                            <h3 class="text-xl font-medium text-dark-2 mb-2">暂无产品</h3>
+                            <p class="text-dark-3 mb-6">点击下方按钮添加您的第一个产品</p>
+                            <button id="add-first-product" class="btn-primary">
+                                <i class="fa fa-plus mr-2"></i> 添加产品
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 算砖计算器页面 -->
+                    <div id="calculator-page" class="page-transition hidden">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-bold text-dark">算砖计算器</h2>
+                            <p class="text-dark-3 mt-1">快速计算所需瓷砖数量</p>
+                        </div>
+                        
+                        <!-- 计算器类型选择 -->
+                        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                            <div class="flex flex-wrap gap-2">
+                                <button class="tab active" data-calculator="wall-calculator">墙体算砖</button>
+                                <button class="tab" data-calculator="floor-calculator">地面算砖</button>
+                                <button class="tab" data-calculator="column-calculator">柱子算砖</button>
+                                <button class="tab" data-calculator="area-calculator">面积算砖</button>
+                            </div>
+                        </div>
+                        
+                        <!-- 计算器内容 -->
+                        <div id="calculator-container" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- 计算器表单 -->
+                            <div class="lg:col-span-2 space-y-6">
+                                <!-- 墙体算砖 -->
+                                <div id="wall-calculator" class="calculator-panel bg-white/10 backdrop-blur-xl rounded-lg shadow-sm p-6">
+                                    <h3 class="text-lg font-semibold text-dark mb-4">墙体算砖</h3>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="form-group">
+                                            <label class="form-label" for="wall-length">墙体长度 (m)</label>
+                                            <input type="number" id="wall-length" class="input-field" placeholder="如: 3.5" min="0" step="0.01">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label" for="wall-height">墙体高度 (m)</label>
+                                            <input type="number" id="wall-height" class="input-field" placeholder="如: 2.8" min="0" step="0.01">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label" for="wall-thickness">墙体厚度 (cm)</label>
+                                            <input type="number" id="wall-thickness" class="input-field" placeholder="如: 24" min="0" max="50" step="0.1" value="0">
+                                            <p class="text-xs text-dark-3 mt-1">输入0表示不考虑墙体厚度</p>
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label" for="wall-mortar">灰缝厚度 (mm)</label>
+                                            <input type="number" id="wall-mortar" class="input-field" placeholder="如: 2" min="0" max="10" step="0.5" value="2">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 砖块尺寸设置 -->
+                                    <div class="mt-6 p-4 bg-light-1 rounded-lg">
+                                        <h4 class="text-md font-medium text-dark mb-3">砖块尺寸设置</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div class="form-group">
+                                                <label class="form-label" for="brick-length">砖块长度 (mm)</label>
+                                                <input type="number" id="brick-length" class="input-field" placeholder="如: 240" min="10" max="500" step="1" value="240">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label" for="brick-width">砖块宽度 (mm)</label>
+                                                <input type="number" id="brick-width" class="input-field" placeholder="如: 115" min="10" max="300" step="1" value="115">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-6">
+                                        <button id="calculate-wall" class="btn-primary">
+                                            <i class="fa fa-calculator mr-2"></i> 计算
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 地面算砖 -->
+                                <div id="floor-calculator" class="calculator-panel bg-white/10 backdrop-blur-xl rounded-lg shadow-sm p-6 hidden">
+                                    <h3 class="text-lg font-semibold text-dark mb-4">地面算砖</h3>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="form-group">
+                                            <label class="form-label" for="floor-length">地面长度 (m)</label>
+                                            <input type="number" id="floor-length" class="input-field" placeholder="如: 4.2" min="0" step="0.01">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label" for="floor-width">地面宽度 (m)</label>
+                                            <input type="number" id="floor-width" class="input-field" placeholder="如: 3.6" min="0" step="0.01">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label" for="floor-mortar">灰缝厚度 (mm)</label>
+                                            <input type="number" id="floor-mortar" class="input-field" placeholder="如: 2" min="0" max="10" step="0.5" value="2">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 砖块尺寸设置 -->
+                                    <div class="mt-6 p-4 bg-light-1 rounded-lg">
+                                        <h4 class="text-md font-medium text-dark mb-3">砖块尺寸设置</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div class="form-group">
+                                                <label class="form-label" for="floor-brick-length">砖块长度 (mm)</label>
+                                                <input type="number" id="floor-brick-length" class="input-field" placeholder="如: 600" min="10" max="1000" step="1" value="600">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label" for="floor-brick-width">砖块宽度 (mm)</label>
+                                                <input type="number" id="floor-brick-width" class="input-field" placeholder="如: 600" min="10" max="1000" step="1" value="600">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-6">
+                                        <button id="calculate-floor" class="btn-primary">
+                                            <i class="fa fa-calculator mr-2"></i> 计算
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 柱子算砖 -->
+                                <div id="column-calculator" class="calculator-panel bg-white/10 backdrop-blur-xl rounded-lg shadow-sm p-6 hidden">
+                                    <h3 class="text-lg font-semibold text-dark mb-4">柱子算砖</h3>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="form-group">
+                                            <label class="form-label" for="column-perimeter">柱子周长 (m)</label>
+                                            <input type="number" id="column-perimeter" class="input-field" placeholder="如: 1.6" min="0" step="0.01">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label" for="column-height">柱子高度 (m)</label>
+                                            <input type="number" id="column-height" class="input-field" placeholder="如: 3" min="0" step="0.01">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label" for="column-mortar">灰缝厚度 (mm)</label>
+                                            <input type="number" id="column-mortar" class="input-field" placeholder="如: 2" min="0" max="10" step="0.5" value="2">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 砖块尺寸设置 -->
+                                    <div class="mt-6 p-4 bg-light-1 rounded-lg">
+                                        <h4 class="text-md font-medium text-dark mb-3">砖块尺寸设置</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div class="form-group">
+                                                <label class="form-label" for="column-brick-length">砖块长度 (mm)</label>
+                                                <input type="number" id="column-brick-length" class="input-field" placeholder="如: 240" min="10" max="500" step="1" value="240">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label" for="column-brick-width">砖块宽度 (mm)</label>
+                                                <input type="number" id="column-brick-width" class="input-field" placeholder="如: 115" min="10" max="300" step="1" value="115">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-6">
+                                        <button id="calculate-column" class="btn-primary">
+                                            <i class="fa fa-calculator mr-2"></i> 计算
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 面积算砖 -->
+                                <div id="area-calculator" class="calculator-panel bg-white rounded-lg shadow-sm p-6 hidden">
+                                    <h3 class="text-lg font-semibold text-dark mb-4">面积算砖</h3>
+                                    
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div class="form-group">
+                                            <label class="form-label" for="total-area">总面积 (㎡)</label>
+                                            <input type="number" id="total-area" class="input-field" placeholder="如: 15" min="0" step="0.01">
+                                        </div>
+                                        
+                                        <div class="form-group">
+                                            <label class="form-label" for="area-mortar">灰缝厚度 (mm)</label>
+                                            <input type="number" id="area-mortar" class="input-field" placeholder="如: 2" min="0" max="10" step="0.5" value="2">
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- 砖块尺寸设置 -->
+                                    <div class="mt-6 p-4 bg-light-1 rounded-lg">
+                                        <h4 class="text-md font-medium text-dark mb-3">砖块尺寸设置</h4>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div class="form-group">
+                                                <label class="form-label" for="area-brick-length">砖块长度 (mm)</label>
+                                                <input type="number" id="area-brick-length" class="input-field" placeholder="如: 600" min="10" max="1000" step="1" value="600">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label" for="area-brick-width">砖块宽度 (mm)</label>
+                                                <input type="number" id="area-brick-width" class="input-field" placeholder="如: 600" min="10" max="1000" step="1" value="600">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-6">
+                                        <button id="calculate-area" class="btn-primary">
+                                            <i class="fa fa-calculator mr-2"></i> 计算
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 计算结果 -->
+                            <div class="bg-white/10 backdrop-blur-xl rounded-lg shadow-sm p-4 sm:p-6">
+                                <h3 class="text-lg font-semibold text-dark mb-4">计算结果</h3>
+                                
+                                <div id="calculation-result" class="space-y-4">
+                                    <div class="text-center py-8 text-dark-3">
+                                        <i class="fa fa-calculator text-4xl mb-3"></i>
+                                        <p>请输入参数并点击计算按钮</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-6 space-y-3">
+                                    <button id="save-calculation" class="btn-secondary w-full">
+                                        <i class="fa fa-save mr-2"></i> 保存结果
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 计算历史 -->
+                        <div class="mt-6">
+                            <h3 class="text-lg font-semibold text-dark mb-4">计算历史</h3>
+                            
+                            <div id="calculation-history" class="bg-white rounded-lg shadow-sm p-6">
+                                <div class="overflow-x-auto">
+                                    <table class="min-w-full divide-y divide-light-2">
+                                        <thead>
+                                            <tr>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">类型</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">参数</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">结果</th>
+                                                <th class="px-4 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">时间</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="bg-white divide-y divide-light-2">
+                                            <!-- 计算历史将通过JS动态生成 -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div id="no-history" class="text-center py-8 text-dark-3">
+                                    <i class="fa fa-history text-4xl mb-3"></i>
+                                    <p>暂无计算历史</p>
+                                </div>
+                                
+                                <div class="mt-4 flex justify-end">
+                                    <button id="clear-history" class="btn-secondary">
+                                        <i class="fa fa-trash mr-2"></i> 清空历史
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 用户管理页面 -->
+                    <div id="users-page" class="page-transition hidden">
+                        <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-dark">用户管理</h2>
+                                <p class="text-dark-3 mt-1">管理系统用户</p>
+                            </div>
+                            
+                            <div>
+                                <button id="add-user-btn" class="btn-primary">
+                                    <i class="fa fa-plus mr-2"></i> 添加用户
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 用户列表 -->
+                        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-light-2">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">用户名</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">姓名</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">类型</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">状态</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">创建时间</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-list" class="bg-white divide-y divide-light-2">
+                                        <!-- 用户列表将通过JS动态生成 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div id="no-users" class="text-center py-12 text-dark-3">
+                                <i class="fa fa-users text-4xl mb-3"></i>
+                                <p>暂无用户</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 操作日志页面 -->
+                    <div id="logs-page" class="page-transition hidden">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-bold text-dark">操作日志</h2>
+                            <p class="text-dark-3 mt-1">查看系统操作记录</p>
+                        </div>
+                        
+                        <!-- 日志筛选 -->
+                        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+                            <div class="flex flex-wrap gap-3">
+                                <select id="log-filter" class="input-field">
+                                    <option value="all">全部操作</option>
+                                    <option value="product">产品操作</option>
+                                    <option value="user">用户操作</option>
+                                    <option value="calculation">计算操作</option>
+                                    <option value="system">系统操作</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- 日志列表 -->
+                        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-light-2">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">操作类型</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">操作内容</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">操作人</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">操作时间</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="logs-list" class="bg-white divide-y divide-light-2">
+                                        <!-- 日志列表将通过JS动态生成 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div id="no-logs" class="text-center py-12 text-dark-3">
+                                <i class="fa fa-history text-4xl mb-3"></i>
+                                <p>暂无操作日志</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 系统设置页面 -->
+                    <div id="settings-page" class="page-transition hidden">
+                        <div class="mb-6">
+                            <h2 class="text-2xl font-bold text-dark">系统设置</h2>
+                            <p class="text-dark-3 mt-1">自定义系统外观和配置</p>
+                        </div>
+                        
+                        <div class="bg-white rounded-lg shadow-card p-6 mb-6">
+                            <div class="flex flex-wrap gap-2 mb-6">
+                                <button class="tab active" data-settings="appearance">外观设置</button>
+                                <button class="tab" data-settings="data">数据管理</button>
+                            </div>
+                            
+                            <div id="settings-container">
+                                <!-- 外观设置 -->
+                                <div id="appearance-settings" class="settings-panel">
+                                    <div class="form-group">
+                                        <label class="form-label">背景设置</label>
+                                        <div class="mt-2">
+                                            <div class="flex flex-wrap gap-4">
+                                                <div class="w-20 h-20 rounded-md overflow-hidden border-2 border-primary cursor-pointer">
+                                                    <img src="https://picsum.photos/seed/bg1/200/200" alt="背景1" class="w-full h-full object-cover">
+                                                </div>
+                                                
+                                                <div class="w-20 h-20 rounded-md overflow-hidden border-2 border-transparent hover:border-primary/50 cursor-pointer">
+                                                    <img src="https://picsum.photos/seed/bg2/200/200" alt="背景2" class="w-full h-full object-cover">
+                                                </div>
+                                                
+                                                <div class="w-20 h-20 rounded-md overflow-hidden border-2 border-transparent hover:border-primary/50 cursor-pointer">
+                                                    <img src="https://picsum.photos/seed/bg3/200/200" alt="背景3" class="w-full h-full object-cover">
+                                                </div>
+                                                
+                                                <div class="w-20 h-20 rounded-md overflow-hidden border-2 border-transparent hover:border-primary/50 cursor-pointer bg-light-1 flex items-center justify-center">
+                                                    <label class="cursor-pointer flex flex-col items-center justify-center w-full h-full">
+                                                        <span class="text-dark-3 text-xl mb-1">+</span>
+                                                        <span class="text-xs text-dark-3">自定义</span>
+                                                        <input type="file" class="hidden" accept="image/*">
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label" for="theme-color">主题颜色</label>
+                                        <div class="flex flex-wrap gap-3 mt-2">
+                                            <div class="w-8 h-8 rounded-full bg-primary border-2 border-white shadow-sm cursor-pointer"></div>
+                                            <div class="w-8 h-8 rounded-full bg-secondary border-2 border-transparent hover:border-primary/50 cursor-pointer"></div>
+                                            <div class="w-8 h-8 rounded-full bg-success border-2 border-transparent hover:border-primary/50 cursor-pointer"></div>
+                                            <div class="w-8 h-8 rounded-full bg-warning border-2 border-transparent hover:border-primary/50 cursor-pointer"></div>
+                                            <div class="w-8 h-8 rounded-full bg-danger border-2 border-transparent hover:border-primary/50 cursor-pointer"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label class="form-label">显示设置</label>
+                                        <div class="flex items-center mt-2">
+                                            <input type="checkbox" id="dark-mode" class="h-4 w-4 text-primary focus:ring-primary border-light-2 rounded">
+                                            <label for="dark-mode" class="ml-2 block text-sm text-dark-2">启用深色模式</label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-6 flex justify-end">
+                                        <button id="reset-settings" class="btn-secondary mr-3">
+                                            <span>恢复默认</span>
+                                        </button>
+                                        
+                                        <button id="save-settings" class="btn-primary">
+                                            <span>保存设置</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- 数据管理 -->
+                                <div id="data-settings" class="settings-panel hidden">
+
+                                    
+                                    <div class="bg-light-1 rounded-lg p-4 mb-6">
+                                        <h4 class="font-medium text-dark mb-2">产品数据管理</h4>
+                                        <p class="text-sm text-dark-3 mb-4">导入或导出产品数据</p>
+                                        
+                                        <div class="flex flex-wrap gap-3 mb-4">
+                                            <button id="export-products" class="btn-secondary flex-1">
+                                                <i class="fa fa-download mr-2"></i> 导出产品数据
+                                            </button>
+                                            
+                                            <label for="import-products" class="btn-secondary flex-1 cursor-pointer">
+                                                <i class="fa fa-upload mr-2"></i> 导入产品数据
+                                                <input type="file" id="import-products" class="hidden" accept=".json">
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="flex flex-wrap gap-3 mb-4">
+                                            <button id="export-products-csv" class="btn-secondary flex-1">
+                                                <i class="fa fa-file-text-o mr-2"></i> 导出CSV格式
+                                            </button>
+                                            
+                                            <label for="import-products-csv" class="btn-secondary flex-1 cursor-pointer">
+                                                <i class="fa fa-file-text-o mr-2"></i> 导入CSV格式
+                                                <input type="file" id="import-products-csv" class="hidden" accept=".csv">
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="mt-4">
+                                            <button id="clear-products" class="btn-danger w-full">
+                                                <i class="fa fa-trash mr-2"></i> 清除所有产品数据
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+
+                                    
+                                    <div class="bg-light-1 rounded-lg p-4 mb-6">
+                                        <h4 class="font-medium text-dark mb-2">操作日志管理</h4>
+                                        <p class="text-sm text-dark-3 mb-4">管理系统操作日志</p>
+                                        
+
+                                        
+                                        <div class="form-group mb-4">
+                                            <label class="form-label" for="log-type-filter">操作类型</label>
+                                            <select id="log-type-filter" class="input-field">
+                                                <option value="all">全部类型</option>
+                                                <option value="product">产品操作</option>
+                                                <option value="user">用户操作</option>
+                                                <option value="calculation">计算操作</option>
+                                                <option value="system">系统操作</option>
+                                                <option value="清除数据">清除数据</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="flex flex-wrap gap-3 mb-4">
+                                            <button id="filter-logs" class="btn-secondary flex-1">
+                                                <i class="fa fa-filter mr-2"></i> 筛选日志
+                                            </button>
+                                            
+                                            <button id="export-logs" class="btn-secondary flex-1">
+                                                <i class="fa fa-download mr-2"></i> 导出日志数据
+                                            </button>
+                                        </div>
+                                        
+                                        <div class="mt-4">
+                                            <button id="clear-logs" class="btn-danger w-full">
+                                                <i class="fa fa-trash mr-2"></i> 清除所有操作日志
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-light-1 rounded-lg p-4">
+                                        <h4 class="font-medium text-dark mb-2">计算历史管理</h4>
+                                        <p class="text-sm text-dark-3 mb-4">管理算砖计算器历史记录</p>
+                                        
+                                        <div class="mt-4">
+                                            <button id="clear-calculations" class="btn-danger w-full">
+                                                <i class="fa fa-trash mr-2"></i> 清除所有计算历史
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    
+    
+    <!-- 添加产品模态框 -->
+    <div id="add-product-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-dark">添加产品</h3>
+                <button id="close-product-modal" class="text-dark-3 hover:text-dark transition-colors">
+                    <span class="text-xl">×</span>
+                </button>
+            </div>
+            
+            <div id="add-product-form" class="space-y-4">
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="form-group">
+                        <label class="form-label" for="product-name">产品名称 <span class="text-danger">*</span></label>
+                        <input type="text" id="product-name" name="name" class="input-field" placeholder="请输入产品名称">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">产品图片</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+                            <!-- 图片上传区域 -->
+                            <div id="product-image-upload" class="border-2 border-dashed border-light-3 rounded-md p-4 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors">
+                                <i class="fa fa-cloud-upload text-2xl text-dark-3 mb-2"></i>
+                                <span class="text-sm text-dark-3">点击上传图片</span>
+                                <input type="file" id="product-image-input" class="hidden" accept="image/*">
+                            </div>
+                            
+                            <!-- 图片预览区域 -->
+                            <div id="product-image-preview" class="hidden border-2 border-light-3 rounded-md overflow-hidden relative">
+                                <img src="" alt="产品图片预览" class="w-full h-full object-cover">
+                                <button type="button" id="remove-image" class="absolute top-2 right-2 bg-dark/70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-danger transition-colors">
+                                    <i class="fa fa-times text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label" for="product-price">价格 <span class="text-danger">*</span></label>
+                            <input type="number" id="product-price" name="price" class="input-field" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="product-model">型号 <span class="text-danger">*</span></label>
+                            <input type="text" id="product-model" name="model" class="input-field" placeholder="型号">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="product-category">分类 <span class="text-danger">*</span></label>
+                        <select id="product-category" name="category" class="input-field">
+                            <option value="">请选择分类</option>
+                            <option value="tile">瓷砖</option>
+                            <option value="stone">石材</option>
+                            <option value="floor">地板</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label" for="product-size">尺寸 (cm)</label>
+                            <input type="text" id="product-size" name="size" class="input-field" placeholder="如: 60x60">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="product-style">风格</label>
+                            <input type="text" id="product-style" name="style" class="input-field" placeholder="如: 现代">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="product-description">产品描述</label>
+                        <textarea id="product-description" name="description" class="input-field" rows="2" placeholder="请输入产品描述"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">产品标签</label>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="badge-on-sale" name="badges" value="on-sale" class="h-4 w-4 text-primary focus:ring-primary border-light-2 rounded">
+                                <label for="badge-on-sale" class="ml-2 block text-sm text-dark-2">在售</label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="badge-hot" name="badges" value="hot" class="h-4 w-4 text-primary focus:ring-primary border-light-2 rounded">
+                                <label for="badge-hot" class="ml-2 block text-sm text-dark-2">爆款</label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="badge-bargain" name="badges" value="bargain" class="h-4 w-4 text-primary focus:ring-primary border-light-2 rounded">
+                                <label for="badge-bargain" class="ml-2 block text-sm text-dark-2">特价</label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="badge-new" name="badges" value="new" class="h-4 w-4 text-primary focus:ring-primary border-light-2 rounded">
+                                <label for="badge-new" class="ml-2 block text-sm text-dark-2">新品</label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="badge-discontinued" name="badges" value="discontinued" class="h-4 w-4 text-primary focus:ring-primary border-light-2 rounded">
+                                <label for="badge-discontinued" class="ml-2 block text-sm text-dark-2">停售</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="product-image">产品图片</label>
+                        <div class="mt-2 border-2 border-dashed border-light-2 rounded-md p-3 text-center hover:border-primary transition-colors">
+                            <input type="file" id="product-image" name="image" class="hidden" accept="image/*">
+                            <label for="product-image" class="cursor-pointer">
+                                <div class="w-12 h-12 mx-auto mb-2 text-dark-3">
+                                    <span class="text-2xl">📤</span>
+                                </div>
+                                <p class="text-sm text-dark-3">上传图片</p>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancel-add-product" class="btn-secondary">取消</button>
+                    <button type="button" id="submit-add-product" class="btn-primary">添加产品</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑产品模态框 -->
+    <div id="edit-product-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-end items-center mb-6">
+                <button id="close-edit-product-modal" class="text-dark-3 hover:text-dark transition-colors">
+                    <span class="text-xl">×</span>
+                </button>
+            </div>
+            
+            <div id="edit-product-form" class="space-y-4">
+                <input type="hidden" id="edit-product-id">
+                
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="form-group">
+                        <label class="form-label" for="edit-product-name">产品名称 <span class="text-danger">*</span></label>
+                        <input type="text" id="edit-product-name" name="name" class="input-field" placeholder="请输入产品名称">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">产品图片</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-2">
+                            <!-- 图片上传区域 -->
+                            <div id="edit-product-image-upload" class="border-2 border-dashed border-light-3 rounded-md p-4 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors">
+                                <i class="fa fa-cloud-upload text-2xl text-dark-3 mb-2"></i>
+                                <span class="text-sm text-dark-3">点击上传图片</span>
+                                <input type="file" id="edit-product-image-input" class="hidden" accept="image/*">
+                            </div>
+                            
+                            <!-- 图片预览区域 -->
+                            <div id="edit-product-image-preview" class="hidden border-2 border-light-3 rounded-md overflow-hidden relative">
+                                <img src="" alt="产品图片预览" class="w-full h-full object-cover">
+                                <button type="button" id="edit-remove-image" class="absolute top-2 right-2 bg-dark/70 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-danger transition-colors">
+                                    <i class="fa fa-times text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label" for="edit-product-price">价格 <span class="text-danger">*</span></label>
+                            <input type="number" id="edit-product-price" name="price" class="input-field" placeholder="0.00" min="0" step="0.01">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="edit-product-model">型号 <span class="text-danger">*</span></label>
+                            <input type="text" id="edit-product-model" name="model" class="input-field" placeholder="型号">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="edit-product-category">分类 <span class="text-danger">*</span></label>
+                        <select id="edit-product-category" name="category" class="input-field">
+                            <option value="">请选择分类</option>
+                            <option value="tile">瓷砖</option>
+                            <option value="stone">石材</option>
+                            <option value="floor">地板</option>
+                            <option value="other">其他</option>
+                        </select>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group">
+                            <label class="form-label" for="edit-product-size">尺寸 (cm)</label>
+                            <input type="text" id="edit-product-size" name="size" class="input-field" placeholder="如: 60x60">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="edit-product-style">风格</label>
+                            <input type="text" id="edit-product-style" name="style" class="input-field" placeholder="如: 现代">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="edit-product-description">产品描述</label>
+                        <textarea id="edit-product-description" name="description" class="input-field" rows="2" placeholder="请输入产品描述"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">产品标签</label>
+                        <div class="flex flex-wrap gap-2 mt-2">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="edit-badge-on-sale" name="badges" value="on-sale" class="h-4 w-4 text-primary focus:ring-primary border-light-2 rounded">
+                                <label for="edit-badge-on-sale" class="ml-2 block text-sm text-dark-2">在售</label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="edit-badge-hot" name="badges" value="hot" class="h-4 w-4 text-primary focus:ring-primary border-light-2 rounded">
+                                <label for="edit-badge-hot" class="ml-2 block text-sm text-dark-2">爆款</label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="edit-badge-bargain" name="badges" value="bargain" class="h-4 w-4 text-primary focus:ring-primary border-light-2 rounded">
+                                <label for="edit-badge-bargain" class="ml-2 block text-sm text-dark-2">特价</label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="edit-badge-new" name="badges" value="new" class="h-4 w-4 text-primary focus:ring-primary border-light-2 rounded">
+                                <label for="edit-badge-new" class="ml-2 block text-sm text-dark-2">新品</label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="edit-badge-discontinued" name="badges" value="discontinued" class="h-4 w-4 text-primary focus:ring-primary border-light-2 rounded">
+                                <label for="edit-badge-discontinued" class="ml-2 block text-sm text-dark-2">停售</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancel-edit-product" class="btn-secondary">取消</button>
+                    <button type="button" id="submit-edit-product" class="btn-primary">保存修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 添加用户模态框 -->
+    <div id="add-user-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-dark">添加用户</h3>
+                <button id="close-user-modal" class="text-dark-3 hover:text-dark transition-colors">
+                    <span class="text-xl">×</span>
+                </button>
+            </div>
+            
+            <div id="add-user-form" class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label" for="new-username">用户名 <span class="text-danger">*</span></label>
+                    <input type="text" id="new-username" name="username" class="input-field" placeholder="请输入用户名">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="new-name">姓名 <span class="text-danger">*</span></label>
+                    <input type="text" id="new-name" name="name" class="input-field" placeholder="请输入姓名">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="new-password">密码 <span class="text-danger">*</span></label>
+                    <input type="password" id="new-password" name="password" class="input-field" placeholder="请输入密码">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="new-type">用户类型</label>
+                    <select id="new-type" name="type" class="input-field">
+                        <option value="user">普通用户</option>
+                        <option value="admin">管理员</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="new-status">状态</label>
+                    <select id="new-status" name="status" class="input-field">
+                        <option value="active">启用</option>
+                        <option value="inactive">禁用</option>
+                    </select>
+                </div>
+                
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancel-add-user" class="btn-secondary">取消</button>
+                    <button type="button" id="submit-add-user" class="btn-primary">添加用户</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 确认对话框 -->
+    <div id="confirm-dialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-danger/10 text-danger text-2xl mb-4">
+                    <i class="fa fa-exclamation-triangle"></i>
+                </div>
+                <h3 id="confirm-title" class="text-xl font-bold text-dark mb-2">确认操作</h3>
+                <p id="confirm-message" class="text-dark-2">您确定要执行此操作吗？此操作不可撤销。</p>
+            </div>
+            
+            <div class="flex justify-center gap-3">
+                <button id="confirm-cancel" class="btn-secondary px-6">取消</button>
+                <button id="confirm-ok" class="btn-danger px-6">确认</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 编辑用户模态框 -->
+    <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-dark">编辑用户</h3>
+                <button id="close-edit-user-modal" class="text-dark-3 hover:text-dark transition-colors">
+                    <span class="text-xl">×</span>
+                </button>
+            </div>
+            
+            <div id="edit-user-form" class="space-y-4">
+                <input type="hidden" id="edit-user-id">
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit-username">用户名</label>
+                    <input type="text" id="edit-username" name="username" class="input-field" disabled="">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit-name">姓名 <span class="text-danger">*</span></label>
+                    <input type="text" id="edit-name" name="name" class="input-field" placeholder="请输入姓名">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit-password">密码</label>
+                    <input type="password" id="edit-password" name="password" class="input-field" placeholder="留空表示不修改密码">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit-type">用户类型</label>
+                    <select id="edit-type" name="type" class="input-field">
+                        <option value="user">普通用户</option>
+                        <option value="admin">管理员</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="edit-status">状态</label>
+                    <select id="edit-status" name="status" class="input-field">
+                        <option value="active">启用</option>
+                        <option value="inactive">禁用</option>
+                    </select>
+                </div>
+                
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancel-edit-user" class="btn-secondary">取消</button>
+                    <button type="button" id="submit-edit-user" class="btn-primary">保存修改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 确认对话框 -->
+    <div id="confirm-dialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
+            <div class="text-center mb-6">
+                <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-warning/10 flex items-center justify-center text-warning">
+                    <i class="fa fa-exclamation-triangle text-2xl"></i>
+                </div>
+                <h3 id="confirm-title" class="text-lg font-bold text-dark">确认操作</h3>
+                <p id="confirm-message" class="text-dark-3 mt-2">您确定要执行此操作吗？</p>
+            </div>
+            
+            <div class="flex justify-center space-x-3">
+                <button id="confirm-cancel" class="btn-secondary">取消</button>
+                <button id="confirm-ok" class="btn-danger">确认</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 通知提示 -->
+    <div id="notification" class="fixed top-4 right-4 z-50 max-w-xs hidden">
+        <div class="bg-white rounded-lg shadow-lg p-4 border-l-4 border-primary">
+            <div class="flex items-start">
+                <div id="notification-icon" class="flex-shrink-0 text-primary mr-3">
+                    <i class="fa fa-check-circle text-xl"></i>
+                </div>
+                <div class="flex-1">
+                    <h4 id="notification-title" class="text-sm font-medium text-dark">操作成功</h4>
+                    <p id="notification-message" class="text-xs text-dark-3 mt-1">您的操作已成功完成</p>
+                </div>
+                <button id="close-notification" class="text-dark-3 hover:text-dark ml-4">
+                    <i class="fa fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 主应用脚本 -->
+    <script>
+        // 全局变量
+        let currentUser = null;
+        let products = [];
+        let calculationHistory = [];
+        let users = [];
+        let operationLogs = [];
+        let currentPage = 'products-page';
+        let currentCalculator = 'wall-calculator';
+        let currentSettings = 'appearance-settings';
+        let currentLogFilter = 'all';
+        let currentProductFilter = 'all';
+
+        
+        // Supabase配置 - 使用实际的项目URL和API密钥
+        const supabaseUrl = 'https://kdtepufnlqkpkxijmwdr.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkdGVwdWZubHFrcGt4aWptd2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4OTg2OTgsImV4cCI6MjA3OTQ3NDY5OH0.UWHS54Vf-9Ek3ET05UzuINb6Q0A2okj1YcpTYqRyq8c';
+        
+        // 初始化Supabase客户端
+        let supabase;
+        try {
+            // 检查是否已通过CDN加载Supabase SDK
+            if (typeof createClient !== 'undefined') {
+                supabase = createClient(supabaseUrl, supabaseKey, {
+                    auth: {
+                        persistSession: true,
+                        autoRefreshToken: true,
+                        detectSessionInUrl: true
+                    },
+                    global: {
+                        headers: { 'X-Client-Info': 'Marco-Polo-Management-System/1.0' }
+                    }
+                });
+                console.log('Supabase客户端初始化成功');
+            } else {
+                console.warn('Supabase SDK未加载，使用本地存储模式');
+                supabase = null;
+            }
+        } catch (error) {
+            console.error('Supabase客户端初始化失败:', error.message);
+            supabase = null;
+        }
+        
+        // DOM 元素加载完成后执行
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 初始化应用
+            try {
+                // Supabase配置已硬编码在代码中
+                
+                console.log('应用将使用Supabase云存储模式运行');
+                
+                // 初始化数据
+                await initializeData();
+                
+                // 检查是否有保存的用户会话
+                const savedUser = await loadData('currentUser');
+                if (savedUser && savedUser.length > 0) {
+                    try {
+                        currentUser = savedUser[0]; // Supabase返回数组，取第一个元素
+                        console.log('检测到保存的用户会话，自动登录:', currentUser.username);
+                        // 显示应用
+                        document.getElementById('login-page').classList.add('hidden');
+                        document.getElementById('app').classList.remove('hidden');
+                        document.getElementById('current-username').textContent = currentUser.name || currentUser.username;
+                        
+                        // 加载数据
+                        await loadAllData();
+                    } catch (error) {
+                        console.error('解析保存的用户会话失败:', error.message);
+                        // 使用Supabase API删除当前用户记录
+                        if (supabase) {
+                            await supabase.from('current_user').delete().neq('id', '');
+                        }
+                    }
+                }
+                
+                // 绑定事件监听器
+                bindEventListeners();
+                
+                console.log('Marco Polo 管理系统初始化完成');
+            } catch (error) {
+                console.error('应用初始化失败:', error.message);
+                showNotification('错误', '系统初始化失败，请检查网络连接或联系管理员', 'error');
+            }
+        });
+        
+        // Supabase数据操作函数
+        async function loadData(key, defaultValue = null) {
+            try {
+                if (!supabase) {
+                    console.error('Supabase客户端未初始化，无法加载数据');
+                    return defaultValue;
+                }
+                
+                // 根据key映射到对应的Supabase表名
+                const tableName = getTableName(key);
+                const { data, error } = await supabase.from(tableName).select('*');
+                
+                if (error) {
+                    console.error(`从Supabase加载数据失败 (${key}):`, error.message);
+                    return defaultValue;
+                }
+                
+                console.log(`从Supabase成功加载数据: ${key}, 共 ${data.length} 条记录`);
+                return data;
+            } catch (error) {
+                console.error(`加载数据失败 (${key}):`, error.message);
+                return defaultValue;
+            }
+        }
+
+        // 保存数据到Supabase
+        async function saveData(key, data) {
+            try {
+                if (!supabase) {
+                    console.error('Supabase客户端未初始化，无法保存数据');
+                    return false;
+                }
+                
+                // 根据key映射到对应的Supabase表名
+                const tableName = getTableName(key);
+                
+                // 清空现有数据并插入新数据
+                await supabase.from(tableName).delete().neq('id', '');
+                const { error } = await supabase.from(tableName).insert(data);
+                
+                if (error) {
+                    console.error(`保存数据到Supabase失败 (${key}):`, error.message);
+                    return false;
+                }
+                
+                console.log(`数据已保存到Supabase: ${key}, 共 ${Array.isArray(data) ? data.length : 1} 条记录`);
+                return true;
+            } catch (error) {
+                console.error(`保存数据失败 (${key}):`, error.message);
+                return false;
+            }
+        }
+
+        // 辅助函数：将本地存储的key映射到Supabase表名
+        function getTableName(key) {
+            const tableMap = {
+                'products': 'products',
+                'users': 'users',
+                'calculationHistory': 'calculation_history',
+                'operationLogs': 'operation_logs',
+                'currentUser': 'current_user'
+            };
+            return tableMap[key] || key;
+        }
+
+        // 初始化数据
+        async function initializeData() {
+            try {
+                // 确保Supabase客户端已初始化
+                if (!supabase) {
+                    throw new Error('Supabase客户端未初始化');
+                }
+                
+                // 初始化产品数据
+                products = await loadData('products', []);
+                
+                // 如果没有产品数据，创建一些示例数据
+                if (products.length === 0) {
+                    const sampleProducts = [
+                        {
+                            id: 'prod_1',
+                            name: '抛光瓷砖 60x60',
+                            price: 88.5,
+                            model: 'PT-6060',
+                            category: 'tile',
+                            size: '60x60',
+                            style: '现代',
+                            description: '高质量抛光瓷砖，适用于客厅、卧室等地面装饰',
+                            image: 'https://picsum.photos/seed/tile1/400/300',
+                            badges: ['on-sale', 'hot'],
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        },
+                        {
+                            id: 'prod_2',
+                            name: '大理石瓷砖 80x80',
+                            price: 168.0,
+                            model: 'MT-8080',
+                            category: 'tile',
+                            size: '80x80',
+                            style: '欧式',
+                            description: '仿大理石纹理瓷砖，高端大气',
+                            image: 'https://picsum.photos/seed/tile2/400/300',
+                            badges: ['new'],
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        },
+                        {
+                            id: 'prod_3',
+                            name: '防滑地砖 30x30',
+                            price: 35.0,
+                            model: 'ST-3030',
+                            category: 'tile',
+                            size: '30x30',
+                            style: '简约',
+                            description: '厨房卫生间专用防滑地砖',
+                            image: 'https://picsum.photos/seed/tile3/400/300',
+                            badges: ['bargain'],
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        }
+                    ];
+                    await saveData('products', sampleProducts);
+                    products = sampleProducts;
+                    console.log('创建示例产品数据');
+                }
+                
+                // 初始化用户数据
+                users = await loadData('users', []);
+                
+                // 如果没有用户数据，创建默认管理员用户
+                if (users.length === 0) {
+                    const adminUser = [
+                        {
+                            id: 'admin_1',
+                            username: 'admin',
+                            password: 'admin123', // 密码明文存储，实际应用中应该加密
+                            name: '系统管理员',
+                            type: 'admin',
+                            status: 'active',
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        }
+                    ];
+                    await saveData('users', adminUser);
+                    users = adminUser;
+                    console.log('创建默认管理员用户');
+                }
+                
+                // 初始化计算历史
+                calculationHistory = await loadData('calculationHistory', []);
+                
+                // 初始化操作日志
+                operationLogs = await loadData('operationLogs', []);
+                
+                console.log('数据初始化完成');
+            } catch (error) {
+                console.error('初始化数据失败:', error.message);
+                // 如果Supabase连接失败，可以提供一个错误提示给用户
+                showNotification('错误', '无法连接到Supabase服务，请检查网络连接或联系管理员', 'error');
+            }
+        }
+        
+        // 加载所有数据
+        function loadAllData() {
+            // 尝试从Supabase加载数据
+            console.log('Supabase模式：尝试加载数据...');
+            
+            if (supabaseUrl && supabaseKey) {
+                // 这里应该是实际的Supabase数据加载逻辑
+                // 由于没有实际的Supabase连接，我们仍然使用本地数据
+                console.log('使用本地数据作为Supabase数据的模拟');
+            } else {
+                console.log('未配置Supabase，使用本地数据作为模拟');
+            }
+            
+            // 渲染产品列表
+            renderProducts();
+            
+            // 渲染用户列表
+            renderUsers();
+            
+            // 渲染计算历史
+            renderCalculationHistory();
+            
+            // 渲染操作日志
+            renderOperationLogs();
+        }
+        
+        // 绑定事件监听器
+        function bindEventListeners() {
+            // 侧边栏切换
+            // 侧边栏已移除，无需切换功能
+            
+            // 用户菜单切换
+            document.getElementById('user-menu-btn').addEventListener('click', toggleUserMenu);
+            
+            // 移动端菜单事件监听
+            document.getElementById('mobile-menu-toggle').addEventListener('click', toggleMobileMenu);
+            
+            // 移动端用户菜单事件监听
+            document.getElementById('mobile-user-menu-btn').addEventListener('click', toggleMobileUserMenu);
+            
+            // 点击页面其他区域关闭所有菜单
+            document.addEventListener('click', (e) => {
+                // 关闭桌面端用户菜单
+                if (!e.target.closest('#user-menu-btn') && !e.target.closest('#user-menu')) {
+                    document.getElementById('user-menu').classList.add('hidden');
+                }
+                
+                // 关闭移动端主菜单
+                if (!e.target.closest('#mobile-menu-toggle') && !e.target.closest('#mobile-nav')) {
+                    document.getElementById('mobile-nav').classList.add('hidden');
+                }
+                
+                // 关闭移动端用户菜单
+                if (!e.target.closest('#mobile-user-menu-btn') && !e.target.closest('#mobile-user-menu')) {
+                    document.getElementById('mobile-user-menu').classList.add('hidden');
+                }
+            });
+            
+            // 数据清除功能
+            bindDataClearEvents();
+            
+            // 侧边栏导航
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation(); // 阻止事件冒泡到document
+                    const page = item.getAttribute('data-page');
+                    navigateTo(page);
+                    
+                    // 在移动端，点击导航项后可以选择是否关闭菜单
+                    // 如果需要保持菜单打开，注释掉下面这行
+                    if (window.innerWidth < 768) { // 检测是否为移动端
+                        document.getElementById('mobile-nav').classList.add('hidden');
+                    }
+                });
+            });
+            
+            // 计算器标签切换
+            document.querySelectorAll('[data-calculator]').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const calculator = tab.getAttribute('data-calculator');
+                    switchCalculator(calculator);
+                });
+            });
+            
+            // 设置标签切换
+            document.querySelectorAll('[data-settings]').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const settings = tab.getAttribute('data-settings');
+                    switchSettings(settings);
+                });
+            });
+            
+            // 登录按钮点击事件
+            document.getElementById('login-button').addEventListener('click', handleLogin);
+            
+            // 退出登录
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            
+            // 产品搜索
+            document.getElementById('product-search').addEventListener('input', () => {
+                renderProducts();
+            });
+            
+            // 添加产品按钮
+            document.getElementById('add-product-btn').addEventListener('click', () => {
+                document.getElementById('add-product-modal').classList.remove('hidden');
+            });
+            
+            document.getElementById('add-first-product').addEventListener('click', () => {
+                document.getElementById('add-product-modal').classList.remove('hidden');
+            });
+            
+            // 关闭产品模态框
+            document.getElementById('close-product-modal').addEventListener('click', () => {
+                document.getElementById('add-product-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('cancel-add-product').addEventListener('click', () => {
+                document.getElementById('add-product-modal').classList.add('hidden');
+            });
+            
+            // 提交添加产品
+            document.getElementById('submit-add-product').addEventListener('click', handleAddProduct);
+            
+            // 产品操作按钮事件委托
+            document.getElementById('products-container').addEventListener('click', async (e) => {
+                const actionButton = e.target.closest('.product-action');
+                if (actionButton) {
+                    const action = actionButton.dataset.action;
+                    const productId = actionButton.dataset.id;
+                    
+                    if (action === 'edit') {
+                        editProduct(productId);
+                    } else if (action === 'delete') {
+                        deleteProduct(productId);
+                    }
+                }
+            });
+            
+            // 关闭编辑产品模态框
+            document.getElementById('close-edit-product-modal').addEventListener('click', () => {
+                document.getElementById('edit-product-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('cancel-edit-product').addEventListener('click', () => {
+                document.getElementById('edit-product-modal').classList.add('hidden');
+            });
+            
+            // 提交编辑产品
+            document.getElementById('submit-edit-product').addEventListener('click', handleEditProduct);
+            
+            // 添加用户按钮
+            document.getElementById('add-user-btn').addEventListener('click', () => {
+                document.getElementById('add-user-modal').classList.remove('hidden');
+            });
+            
+            // 关闭用户模态框
+            document.getElementById('close-user-modal').addEventListener('click', () => {
+                document.getElementById('add-user-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('cancel-add-user').addEventListener('click', () => {
+                document.getElementById('add-user-modal').classList.add('hidden');
+            });
+            
+            // 提交添加用户
+            document.getElementById('submit-add-user').addEventListener('click', handleAddUser);
+            
+            // 用户操作按钮事件委托
+            document.getElementById('users-list').addEventListener('click', (e) => {
+                const actionButton = e.target.closest('.user-action');
+                if (actionButton) {
+                    const action = actionButton.dataset.action;
+                    const userId = actionButton.dataset.id;
+                    
+                    if (action === 'edit') {
+                        editUser(userId);
+                    } else if (action === 'delete') {
+                        deleteUser(userId);
+                    }
+                }
+            });
+            
+            // 关闭编辑用户模态框
+            document.getElementById('close-edit-user-modal').addEventListener('click', () => {
+                document.getElementById('edit-user-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('cancel-edit-user').addEventListener('click', () => {
+                document.getElementById('edit-user-modal').classList.add('hidden');
+            });
+            
+            // 提交编辑用户
+            document.getElementById('submit-edit-user').addEventListener('click', handleEditUser);
+            
+            // 日志筛选
+            document.getElementById('log-filter').addEventListener('change', () => {
+                currentLogFilter = document.getElementById('log-filter').value;
+                renderOperationLogs();
+            });
+            
+            // 计算器计算按钮
+            document.getElementById('calculate-wall').addEventListener('click', calculateWallBricks);
+            document.getElementById('calculate-floor').addEventListener('click', calculateFloorBricks);
+            document.getElementById('calculate-column').addEventListener('click', calculateColumnBricks);
+            document.getElementById('calculate-area').addEventListener('click', calculateAreaBricks);
+            
+            // 保存计算结果
+            document.getElementById('save-calculation').addEventListener('click', saveCalculation);
+            
+            // 清空计算历史
+            document.getElementById('clear-history').addEventListener('click', clearHistory);
+            
+            // 确认对话框按钮事件已在showConfirmDialog函数中处理
+            
+            // 关闭通知
+            document.getElementById('close-notification').addEventListener('click', () => {
+                document.getElementById('notification').classList.add('hidden');
+            });
+            
+            // 数据管理 - 存储模式切换
+            document.querySelectorAll('input[name="storage-mode"]').forEach(radio => {
+                radio.addEventListener('change', function() {
+                    const supabaseConfig = document.getElementById('supabase-config');
+                    if (this.id === 'supabase-storage') {
+                        supabaseConfig.classList.remove('hidden');
+                    } else {
+                        supabaseConfig.classList.add('hidden');
+                    }
+                });
+            });
+            
+
+            
+            // 导出产品数据
+            document.getElementById('export-products').addEventListener('click', exportProductsData);
+            
+            // 导入产品数据
+            document.getElementById('import-products').addEventListener('change', importProductsData);
+            
+            // 导出产品数据CSV格式
+            document.getElementById('export-products-csv').addEventListener('click', exportProductsCSV);
+            
+            // 导入产品数据CSV格式
+            document.getElementById('import-products-csv').addEventListener('change', importProductsCSV);
+            
+            // 清除产品数据
+            document.getElementById('clear-products').addEventListener('click', () => {
+                showConfirmDialog(
+                    '清除产品数据',
+                    '确定要清除所有产品数据吗？此操作不可撤销。',
+                    clearProductsData
+                );
+            });
+            
+            // 外观设置相关
+            const backgroundImages = document.querySelectorAll('#appearance-settings .w-20.h-20');
+            const themeColors = document.querySelectorAll('#appearance-settings .w-8.h-8.rounded-full');
+            const darkModeToggle = document.getElementById('dark-mode');
+            const customBgInput = document.querySelector('#appearance-settings input[type="file"]');
+            
+            // 初始化外观设置
+            function initializeAppearanceSettings() {
+                // 从本地存储加载设置
+                const savedBackground = localStorage.getItem('appBackground') || 'bg1';
+                const savedTheme = localStorage.getItem('appTheme') || 'primary';
+                const savedDarkMode = localStorage.getItem('appDarkMode') === 'true';
+                
+                // 应用背景设置
+                if (savedBackground.startsWith('custom_')) {
+                    document.body.style.backgroundImage = `url(${savedBackground.replace('custom_', '')})`;
+                    document.body.classList.add('bg-cover', 'bg-fixed');
+                    // 选中自定义背景
+                    backgroundImages.forEach(img => {
+                        img.classList.remove('border-primary');
+                        img.classList.add('border-transparent');
+                    });
+                    backgroundImages[3].classList.remove('border-transparent');
+                    backgroundImages[3].classList.add('border-primary');
+                } else {
+                    // 应用预设背景
+                    document.body.style.backgroundImage = `url(https://picsum.photos/seed/${savedBackground}/1920/1080)`;
+                    document.body.classList.add('bg-cover', 'bg-fixed');
+                    // 选中对应的背景
+                    backgroundImages.forEach((img, index) => {
+                        img.classList.remove('border-primary');
+                        img.classList.add('border-transparent');
+                        if (index < 3 && img.querySelector('img').src.includes(savedBackground)) {
+                            img.classList.remove('border-transparent');
+                            img.classList.add('border-primary');
+                        }
+                    });
+                }
+                
+                // 应用主题颜色
+                applyThemeColor(savedTheme);
+                
+                // 应用深色模式
+                darkModeToggle.checked = savedDarkMode;
+                if (savedDarkMode) {
+                    document.body.classList.add('dark-mode');
+                    document.body.classList.add('bg-dark-1', 'text-light-1');
+                    document.body.classList.remove('bg-light');
+                }
+            }
+            
+            // 应用主题颜色
+            function applyThemeColor(themeName) {
+                // 移除现有的主题类
+                document.body.classList.remove('theme-primary', 'theme-secondary', 'theme-success', 'theme-warning', 'theme-danger');
+                // 添加新的主题类
+                document.body.classList.add(`theme-${themeName}`);
+                
+                // 更新CSS变量
+                const themeColors = {
+                    primary: {
+                        main: '#1e40af',
+                        light: '#3b82f6',
+                        dark: '#1e3a8a'
+                    },
+                    secondary: {
+                        main: '#64748b',
+                        light: '#94a3b8',
+                        dark: '#475569'
+                    },
+                    success: {
+                        main: '#059669',
+                        light: '#10b981',
+                        dark: '#047857'
+                    },
+                    warning: {
+                        main: '#d97706',
+                        light: '#f59e0b',
+                        dark: '#b45309'
+                    },
+                    danger: {
+                        main: '#dc2626',
+                        light: '#ef4444',
+                        dark: '#b91c1c'
+                    }
+                };
+                
+                if (themeColors[themeName]) {
+                    document.documentElement.style.setProperty('--color-primary', themeColors[themeName].main);
+                    document.documentElement.style.setProperty('--color-primary-light', themeColors[themeName].light);
+                    document.documentElement.style.setProperty('--color-primary-dark', themeColors[themeName].dark);
+                }
+                
+                // 更新UI选中状态
+                const colorElements = document.querySelectorAll('#appearance-settings .w-8.h-8.rounded-full');
+                colorElements.forEach((color, index) => {
+                    color.classList.remove('border-white');
+                    color.classList.add('border-transparent');
+                    if (index === 0 && themeName === 'primary') {
+                        color.classList.remove('border-transparent');
+                        color.classList.add('border-white');
+                    } else if (index === 1 && themeName === 'secondary') {
+                        color.classList.remove('border-transparent');
+                        color.classList.add('border-white');
+                    } else if (index === 2 && themeName === 'success') {
+                        color.classList.remove('border-transparent');
+                        color.classList.add('border-white');
+                    } else if (index === 3 && themeName === 'warning') {
+                        color.classList.remove('border-transparent');
+                        color.classList.add('border-white');
+                    } else if (index === 4 && themeName === 'danger') {
+                        color.classList.remove('border-transparent');
+                        color.classList.add('border-white');
+                    }
+                });
+            }
+            
+            // 背景选择
+            backgroundImages.forEach((img, index) => {
+                img.addEventListener('click', function() {
+                    if (index < 3) {
+                        // 预设背景
+                        const bgName = `bg${index + 1}`;
+                        document.body.style.backgroundImage = `url(https://picsum.photos/seed/${bgName}/1920/1080)`;
+                        document.body.classList.add('bg-cover', 'bg-fixed');
+                        localStorage.setItem('appBackground', bgName);
+                    }
+                    
+                    // 更新选中状态
+                    backgroundImages.forEach(i => {
+                        i.classList.remove('border-primary');
+                        i.classList.add('border-transparent');
+                    });
+                    this.classList.remove('border-transparent');
+                    this.classList.add('border-primary');
+                });
+            });
+            
+            // 自定义背景上传
+            customBgInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const imgUrl = event.target.result;
+                        document.body.style.backgroundImage = `url(${imgUrl})`;
+                        document.body.classList.add('bg-cover', 'bg-fixed');
+                        localStorage.setItem('appBackground', `custom_${imgUrl}`);
+                        
+                        // 更新选中状态
+                        backgroundImages.forEach(i => {
+                            i.classList.remove('border-primary');
+                            i.classList.add('border-transparent');
+                        });
+                        backgroundImages[3].classList.remove('border-transparent');
+                        backgroundImages[3].classList.add('border-primary');
+                        
+                        showNotification('背景已更新', '自定义背景已成功应用', 'success');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // 主题颜色选择
+            themeColors.forEach((color, index) => {
+                color.addEventListener('click', function() {
+                    let themeName = 'primary';
+                    switch(index) {
+                        case 0: themeName = 'primary'; break;
+                        case 1: themeName = 'secondary'; break;
+                        case 2: themeName = 'success'; break;
+                        case 3: themeName = 'warning'; break;
+                        case 4: themeName = 'danger'; break;
+                    }
+                    
+                    applyThemeColor(themeName);
+                    localStorage.setItem('appTheme', themeName);
+                });
+            });
+            
+            // 深色模式切换
+            darkModeToggle.addEventListener('change', function() {
+                if (this.checked) {
+                    document.body.classList.add('dark-mode');
+                    document.body.classList.add('bg-dark-1', 'text-light-1');
+                    document.body.classList.remove('bg-light');
+                } else {
+                    document.body.classList.remove('dark-mode');
+                    document.body.classList.remove('bg-dark-1', 'text-light-1');
+                    document.body.classList.add('bg-light');
+                }
+                localStorage.setItem('appDarkMode', this.checked.toString());
+            });
+            
+            // 保存设置
+            document.getElementById('save-settings').addEventListener('click', function() {
+                // 获取当前设置
+                const currentBg = document.body.style.backgroundImage || '';
+                const currentTheme = document.body.classList.contains('theme-primary') ? 'primary' :
+                                    document.body.classList.contains('theme-secondary') ? 'secondary' :
+                                    document.body.classList.contains('theme-success') ? 'success' :
+                                    document.body.classList.contains('theme-warning') ? 'warning' :
+                                    document.body.classList.contains('theme-danger') ? 'danger' : 'primary';
+                const currentDarkMode = document.getElementById('dark-mode').checked;
+                
+                // 保存到本地存储
+                localStorage.setItem('appTheme', currentTheme);
+                localStorage.setItem('appDarkMode', currentDarkMode.toString());
+                
+                showNotification('设置已保存', '外观设置已成功保存', 'success');
+            });
+            
+            // 恢复默认设置
+            document.getElementById('reset-settings').addEventListener('click', function() {
+                // 重置背景
+                document.body.style.backgroundImage = 'url(https://picsum.photos/seed/bg1/1920/1080)';
+                document.body.classList.add('bg-cover', 'bg-fixed');
+                localStorage.setItem('appBackground', 'bg1');
+                
+                // 重置主题颜色
+                applyThemeColor('primary');
+                localStorage.setItem('appTheme', 'primary');
+                
+                // 重置深色模式
+                darkModeToggle.checked = false;
+                document.body.classList.remove('dark-mode', 'bg-dark-1', 'text-light-1');
+                document.body.classList.add('bg-light');
+                localStorage.setItem('appDarkMode', 'false');
+                
+                // 更新UI选中状态
+                backgroundImages.forEach((img, index) => {
+                    img.classList.remove('border-primary');
+                    img.classList.add('border-transparent');
+                    if (index === 0) {
+                        img.classList.remove('border-transparent');
+                        img.classList.add('border-primary');
+                    }
+                });
+                
+                themeColors.forEach((color, index) => {
+                    color.classList.remove('border-white');
+                    color.classList.add('border-transparent');
+                    if (index === 0) {
+                        color.classList.remove('border-transparent');
+                        color.classList.add('border-white');
+                    }
+                });
+                
+                showNotification('已恢复默认设置', '外观设置已恢复为默认值', 'success');
+            });
+            
+            // 初始化外观设置
+            initializeAppearanceSettings();
+        }
+        
+        // 切换侧边栏
+        // 侧边栏已移除，无需切换功能
+        
+        // 切换用户菜单
+        function toggleUserMenu() {
+            document.getElementById('user-menu').classList.toggle('hidden');
+        }
+        
+        // 切换移动端菜单
+        function toggleMobileMenu() {
+            document.getElementById('mobile-nav').classList.toggle('hidden');
+        }
+        
+        // 切换移动端用户菜单
+        function toggleMobileUserMenu() {
+            document.getElementById('mobile-user-menu').classList.toggle('hidden');
+        }
+        
+        // 处理图片上传预览
+        function handleImageUpload(inputId, previewId, uploadAreaId) {
+            const input = document.getElementById(inputId);
+            const preview = document.getElementById(previewId);
+            const uploadArea = document.getElementById(uploadAreaId);
+            const previewImg = preview.querySelector('img');
+            
+            input.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        previewImg.src = e.target.result;
+                        preview.classList.remove('hidden');
+                        uploadArea.classList.add('hidden');
+                    }
+                    
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+        }
+        
+        // 处理图片删除
+        function handleImageRemove(removeBtnId, previewId, uploadAreaId, inputId) {
+            const removeBtn = document.getElementById(removeBtnId);
+            const preview = document.getElementById(previewId);
+            const uploadArea = document.getElementById(uploadAreaId);
+            const input = document.getElementById(inputId);
+            
+            removeBtn.addEventListener('click', function() {
+                preview.classList.add('hidden');
+                uploadArea.classList.remove('hidden');
+                input.value = '';
+            });
+        }
+        
+        // 页面导航
+        function navigateTo(page) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page-transition').forEach(p => {
+                p.classList.add('hidden');
+            });
+            
+            // 显示目标页面
+            document.getElementById(page).classList.remove('hidden');
+            
+            // 更新当前页面
+            currentPage = page;
+            
+            // 关闭用户菜单
+            document.getElementById('user-menu').classList.add('hidden');
+        }
+        
+        // 切换计算器
+        function switchCalculator(calculator) {
+            // 隐藏所有计算器
+            document.querySelectorAll('.calculator-panel').forEach(panel => {
+                panel.classList.add('hidden');
+            });
+            
+            // 显示目标计算器
+            document.getElementById(calculator).classList.remove('hidden');
+            
+            // 更新当前计算器
+            currentCalculator = calculator;
+            
+            // 更新标签状态
+            document.querySelectorAll('[data-calculator]').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-calculator="${calculator}"]`).classList.add('active');
+        }
+        
+        // 显示确认对话框
+        function showConfirmDialog(title, message, callback) {
+            const dialog = document.getElementById('confirm-dialog');
+            const titleElement = document.getElementById('confirm-title');
+            const messageElement = document.getElementById('confirm-message');
+            const okButton = document.getElementById('confirm-ok');
+            const cancelButton = document.getElementById('confirm-cancel');
+            
+            // 设置对话框内容
+            titleElement.textContent = title;
+            messageElement.textContent = message;
+            
+            // 移除之前的事件监听器
+            const newOkButton = okButton.cloneNode(true);
+            okButton.parentNode.replaceChild(newOkButton, okButton);
+            
+            const newCancelButton = cancelButton.cloneNode(true);
+            cancelButton.parentNode.replaceChild(newCancelButton, cancelButton);
+            
+            // 添加新的事件监听器
+            newOkButton.addEventListener('click', function() {
+                dialog.classList.add('hidden');
+                if (callback) callback(true);
+            });
+            
+            newCancelButton.addEventListener('click', function() {
+                dialog.classList.add('hidden');
+                if (callback) callback(false);
+            });
+            
+            // 显示对话框
+            dialog.classList.remove('hidden');
+        }
+        
+        // 保存数据到本地存储
+        function saveData(key, data) {
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+                console.log(`数据已保存: ${key}, 共 ${Array.isArray(data) ? data.length : 1} 条记录`);
+                return true;
+            } catch (error) {
+                console.error(`保存数据失败 (${key}):`, error.message);
+                return false;
+            }
+        }
+        
+        // 切换设置面板
+        function switchSettings(settings) {
+            // 隐藏所有设置面板
+            document.querySelectorAll('.settings-panel').forEach(panel => {
+                panel.classList.add('hidden');
+            });
+            
+            // 显示目标设置面板
+            document.getElementById(settings + '-settings').classList.remove('hidden');
+            
+            // 更新当前设置
+            currentSettings = settings;
+            
+            // 更新标签状态
+            document.querySelectorAll('[data-settings]').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-settings="${settings}"]`).classList.add('active');
+        }
+        
+        // 绑定数据清除事件
+        function bindDataClearEvents() {
+            // 清除产品数据
+            document.getElementById('clear-products').addEventListener('click', function() {
+                if (confirm('确定要清除所有产品数据吗？此操作不可恢复！')) {
+                    try {
+                        // 清空产品数据
+                        products = [];
+                        saveData('products', products);
+                        
+                        // 刷新产品列表
+                        renderProducts();
+                        
+                        // 添加操作日志
+                        addOperationLog('清除数据', '清除了所有产品数据');
+                        
+                        // 显示成功通知
+                        showNotification('清除成功', '所有产品数据已清除', 'success');
+                    } catch (error) {
+                        console.error('清除产品数据失败:', error);
+                        showNotification('清除失败', '清除产品数据时发生错误', 'error');
+                    }
+                }
+            });
+            
+
+            
+            // 筛选日志
+            document.getElementById('filter-logs').addEventListener('click', function() {
+                const logType = document.getElementById('log-type-filter').value;
+                
+                try {
+                    // 获取筛选后的日志
+                    let filteredLogs = [...operationLogs];
+                    
+                    // 按类型筛选
+                    if (logType !== 'all') {
+                        filteredLogs = filteredLogs.filter(log => log.type === logType);
+                    }
+                    
+                    // 显示筛选结果
+                    renderFilteredLogs(filteredLogs);
+                    
+                    // 显示筛选结果数量
+                    showNotification('筛选完成', `共找到 ${filteredLogs.length} 条日志记录`, 'success');
+                } catch (error) {
+                    console.error('筛选日志失败:', error);
+                    showNotification('筛选失败', '筛选日志时发生错误', 'error');
+                }
+            });
+            
+            // 导出日志数据
+            document.getElementById('export-logs').addEventListener('click', function() {
+                const logType = document.getElementById('log-type-filter').value;
+                
+                try {
+                    // 获取要导出的日志（应用当前筛选条件）
+                    let logsToExport = [...operationLogs];
+                    
+                    // 按类型筛选
+                    if (logType !== 'all') {
+                        logsToExport = logsToExport.filter(log => log.type === logType);
+                    }
+                    
+                    if (logsToExport.length === 0) {
+                        showNotification('导出失败', '没有符合条件的日志记录', 'error');
+                        return;
+                    }
+                    
+                    // 转换为CSV格式
+                    const headers = ['操作类型', '操作内容', '操作人', '操作时间'];
+                    const csvContent = [
+                        headers.join(','),
+                        ...logsToExport.map(log => [
+                            log.type,
+                            `"${log.description.replace(/"/g, '""')}"`, // 转义双引号
+                            log.user,
+                            new Date(log.timestamp).toLocaleString('zh-CN')
+                        ].join(','))
+                    ].join('\n');
+                    
+                    // 创建下载链接
+                    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    const url = URL.createObjectURL(blob);
+                    
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', `操作日志_${new Date().toISOString().split('T')[0]}.csv`);
+                    link.style.visibility = 'hidden';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // 显示成功通知
+                    showNotification('导出成功', `已导出 ${logsToExport.length} 条日志记录`, 'success');
+                    
+                    // 添加操作日志
+                    addOperationLog('系统操作', `导出了 ${logsToExport.length} 条操作日志`);
+                } catch (error) {
+                    console.error('导出日志失败:', error);
+                    showNotification('导出失败', '导出日志时发生错误', 'error');
+                }
+            });
+            
+            // 清除操作日志
+            document.getElementById('clear-logs').addEventListener('click', function() {
+                const logType = document.getElementById('log-type-filter').value;
+                
+                // 确定要清除的日志范围
+                let logsToClear = [...operationLogs];
+                let clearTitle = '清除操作日志';
+                let clearMessage = '您确定要清除所有操作日志吗？此操作不可恢复！';
+                
+                if (logType !== 'all') {
+                    // 应用筛选条件
+                    logsToClear = logsToClear.filter(log => log.type === logType);
+                    clearMessage = `您确定要清除符合当前筛选条件的 ${logsToClear.length} 条操作日志吗？此操作不可恢复！`;
+                }
+                
+                // 显示自定义确认对话框
+                showConfirmDialog(clearTitle, clearMessage, function(confirmed) {
+                    if (confirmed) {
+                    try {
+                        if (logType !== 'all') {
+                            // 清除符合条件的日志
+                            operationLogs = operationLogs.filter(log => log.type !== logType);
+                        } else {
+                            // 清除所有日志
+                            operationLogs = [];
+                        }
+                        
+                        saveData('operationLogs', operationLogs);
+                        
+                        // 刷新日志列表
+                        renderOperationLogs();
+                        
+                        // 显示成功通知
+                        showNotification('清除成功', `已清除 ${logsToClear.length} 条操作日志`, 'success');
+                        
+                        // 添加操作日志（如果不是清除所有日志）
+                        if (operationLogs.length > 0) {
+                            addOperationLog('清除数据', `清除了 ${logsToClear.length} 条操作日志`);
+                        }
+                    } catch (error) {
+                        console.error('清除操作日志失败:', error);
+                        showNotification('清除失败', '清除操作日志时发生错误', 'error');
+                    }
+                }
+            });
+            });
+            
+            // 清除计算历史
+            document.getElementById('clear-calculations').addEventListener('click', function() {
+                showConfirmDialog('清除计算历史', '您确定要清除所有计算历史吗？此操作不可恢复！', function(confirmed) {
+                    if (confirmed) {
+                    try {
+                        // 清空计算历史
+                        calculationHistory = [];
+                        saveData('calculationHistory', calculationHistory);
+                        
+                        // 刷新计算历史
+                        renderCalculationHistory();
+                        
+                        // 添加操作日志
+                        addOperationLog('清除数据', '清除了所有计算历史');
+                        
+                        // 显示成功通知
+                        showNotification('清除成功', '所有计算历史已清除', 'success');
+                    } catch (error) {
+                        console.error('清除计算历史失败:', error);
+                        showNotification('清除失败', '清除计算历史时发生错误', 'error');
+                    }
+                }
+            });
+            });
+        }
+        
+        // 处理登录
+        async function handleLogin() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            // 表单验证
+            if (!username || !password) {
+                document.getElementById('login-error').textContent = '请输入用户名和密码';
+                document.getElementById('login-error').classList.remove('hidden');
+                return;
+            }
+            
+            // 清除之前的错误信息
+            document.getElementById('login-error').classList.add('hidden');
+            
+            try {
+                // 显示加载状态
+                const loginButton = document.getElementById('login-button');
+                const originalText = loginButton.innerHTML;
+                loginButton.innerHTML = '<div class="loading-spinner mr-2"></div> 登录中...';
+                loginButton.disabled = true;
+                
+                // 从用户列表中查找用户
+                const user = users.find(u => u.username === username);
+                
+                if (user && user.password === password) {
+                    currentUser = user;
+                    
+                    // 保存用户会话
+                    await saveData('currentUser', [user]); // 包装为数组以符合Supabase格式
+                    
+                    // 显示应用
+                    document.getElementById('login-page').classList.add('hidden');
+                    document.getElementById('app').classList.remove('hidden');
+                    document.getElementById('current-username').textContent = user.name || user.username;
+                    
+                    // 记录登录日志
+                    addOperationLog('system', `用户登录: ${user.username}`);
+                    
+                    console.log('登录成功:', user.name || user.username);
+                } else {
+                    // 登录失败
+                    document.getElementById('login-error').textContent = '用户名或密码错误';
+                    document.getElementById('login-error').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('登录失败:', error.message);
+                document.getElementById('login-error').textContent = '登录过程中发生错误，请重试';
+                document.getElementById('login-error').classList.remove('hidden');
+            } finally {
+                // 恢复按钮状态
+                const loginButton = document.getElementById('login-button');
+                loginButton.innerHTML = '<span>登录</span>';
+                loginButton.disabled = false;
+            }
+        }
+        
+        // 处理退出登录
+        async function handleLogout() {
+            try {
+                // 退出登录逻辑 - 使用Supabase API删除当前用户记录
+                if (supabase) {
+                    await supabase.from('current_user').delete().neq('id', '');
+                }
+                currentUser = null;
+                
+                // 显示登录页面
+                document.getElementById('app').classList.add('hidden');
+                document.getElementById('login-page').classList.remove('hidden');
+                
+                // 记录退出登录日志
+                await addOperationLog('system', '用户退出登录');
+                
+                console.log('用户已退出登录');
+            } catch (error) {
+                console.error('退出登录失败:', error.message);
+                showNotification('错误', '退出登录失败，请重试', 'error');
+            }
+        }
+        
+        // 渲染产品列表
+        function renderProducts() {
+            const container = document.getElementById('products-container');
+            const noProducts = document.getElementById('no-products');
+            const searchTerm = document.getElementById('product-search').value.toLowerCase();
+            
+            // 筛选产品
+            let filteredProducts = products;
+            if (searchTerm) {
+                filteredProducts = products.filter(product => 
+                    product.name.toLowerCase().includes(searchTerm) ||
+                    product.model.toLowerCase().includes(searchTerm) ||
+                    product.description.toLowerCase().includes(searchTerm)
+                );
+            }
+            
+            // 清空容器
+            container.innerHTML = '';
+            
+            // 检查是否有产品
+            if (filteredProducts.length === 0) {
+                container.classList.add('hidden');
+                noProducts.classList.remove('hidden');
+                return;
+            }
+            
+            // 显示产品列表
+            container.classList.remove('hidden');
+            noProducts.classList.add('hidden');
+            
+            // 渲染产品卡片
+            filteredProducts.forEach(product => {
+                const card = createProductCard(product);
+                container.appendChild(card);
+            });
+        }
+        
+        // 创建产品卡片
+        function createProductCard(product) {
+            const card = document.createElement('div');
+            card.className = 'bg-white rounded-lg shadow-sm overflow-hidden';
+            card.setAttribute('data-id', product.id);
+            
+            // 生成标签HTML
+            const badgesHtml = product.badges.map(badge => {
+                let badgeClass = '';
+                let badgeText = '';
+                
+                switch (badge) {
+                    case 'on-sale':
+                        badgeClass = 'badge-primary';
+                        badgeText = '在售';
+                        break;
+                    case 'hot':
+                        badgeClass = 'badge-danger';
+                        badgeText = '爆款';
+                        break;
+                    case 'bargain':
+                        badgeClass = 'badge-warning';
+                        badgeText = '特价';
+                        break;
+                    case 'new':
+                        badgeClass = 'badge-success';
+                        badgeText = '新品';
+                        break;
+                    case 'discontinued':
+                        badgeClass = 'badge-secondary';
+                        badgeText = '停售';
+                        break;
+                }
+                
+                return `<span class="badge ${badgeClass}">${badgeText}</span>`;
+            }).join(' ');
+            
+            // 设置卡片内容
+            card.innerHTML = `
+                <div class="relative">
+                    <img src="${product.image}" alt="${product.name}" class="w-full h-48 object-cover">
+                    <div class="absolute top-2 right-2 flex gap-1">
+                        ${badgesHtml}
+                    </div>
+                </div>
+                <div class="p-4">
+                    <h3 class="text-lg font-semibold text-dark mb-2">${product.name}</h3>
+                    <p class="text-dark-3 text-sm mb-2">型号: ${product.model}</p>
+                    <p class="text-dark-3 text-sm mb-2">尺寸: ${product.size || '未知'}</p>
+                    <p class="text-dark-3 text-sm mb-4">风格: ${product.style || '未知'}</p>
+                    <div class="flex justify-between items-center">
+                        <span class="text-xl font-bold text-primary">¥${product.price.toFixed(2)}</span>
+                        <div class="flex gap-2">
+                            <button class="product-action p-2 text-dark-3 hover:text-primary" data-action="edit" data-id="${product.id}" title="编辑">
+                                <i class="fa fa-pencil"></i>
+                            </button>
+                            <button class="product-action p-2 text-dark-3 hover:text-danger" data-action="delete" data-id="${product.id}" title="删除">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        // 处理添加产品
+        function handleAddProduct() {
+            try {
+                // 获取表单数据
+                const name = document.getElementById('product-name').value.trim();
+                const price = parseFloat(document.getElementById('product-price').value);
+                const model = document.getElementById('product-model').value.trim();
+                const category = document.getElementById('product-category').value;
+                const size = document.getElementById('product-size').value ? document.getElementById('product-size').value.trim() : '';
+                const style = document.getElementById('product-style').value ? document.getElementById('product-style').value.trim() : '';
+                const description = document.getElementById('product-description').value ? document.getElementById('product-description').value.trim() : '';
+                
+                // 收集标签（复选框）
+                const badges = [];
+                document.querySelectorAll('#add-product-form input[name="badges"]:checked').forEach(checkbox => {
+                    badges.push(checkbox.value);
+                });
+                
+                // 获取图片数据
+                const imageInput = document.getElementById('product-image-input');
+                let image = '';
+                if (imageInput.files && imageInput.files[0]) {
+                    // 在实际应用中，这里应该上传图片到服务器
+                    // 这里我们使用base64编码作为演示
+                    const reader = new FileReader();
+                    reader.readAsDataURL(imageInput.files[0]);
+                    image = reader.result;
+                } else {
+                    // 默认图片
+                    image = 'https://img.icons8.com/color/480/000000/product.png';
+                }
+                
+                // 验证输入
+                if (!name || isNaN(price) || !model || !category) {
+                    showNotification('添加失败', '请填写所有必填字段，且价格必须是有效数字', 'error');
+                    return;
+                }
+                
+                // 验证价格是否为正数
+                if (price <= 0) {
+                    showNotification('添加失败', '价格必须大于0', 'error');
+                    return;
+                }
+                
+                // 处理文件上传
+                let imageUrl = 'https://picsum.photos/seed/' + name + '/' + Date.now() + '/400/300';
+                
+                // 创建新产品对象
+                const newProduct = {
+                    id: 'prod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    name,
+                    price,
+                    model,
+                    category,
+                    size,
+                    style,
+                    description,
+                    image: imageUrl,
+                    badges,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // 添加到产品数组
+                products.push(newProduct);
+                
+                // 保存产品数据到本地存储
+                localStorage.setItem('products', JSON.stringify(products));
+                
+                // 重新渲染产品列表
+                renderProducts();
+                
+                // 关闭模态框
+                document.getElementById('add-product-modal').classList.add('hidden');
+                
+                // 重置表单
+                document.getElementById('add-product-form').reset();
+                
+                // 显示成功通知
+                showNotification('添加成功', '产品已成功添加', 'success');
+                
+                // 记录操作日志
+                addOperationLog('product', `添加产品: ${name}`);
+            } catch (error) {
+                console.error('添加产品失败:', error.message);
+                showNotification('添加失败', '添加产品时发生错误', 'error');
+            }
+        }
+        
+        // 编辑产品
+        function editProduct(productId) {
+            const product = products.find(p => p.id === productId);
+            if (!product) {
+                showNotification('编辑失败', '产品不存在', 'error');
+                return;
+            }
+            
+            // 填充表单数据
+            document.getElementById('edit-product-id').value = product.id;
+            document.getElementById('edit-product-name').value = product.name;
+            document.getElementById('edit-product-price').value = product.price;
+            document.getElementById('edit-product-model').value = product.model;
+            document.getElementById('edit-product-category').value = product.category;
+            document.getElementById('edit-product-size').value = product.size || '';
+            document.getElementById('edit-product-style').value = product.style || '';
+            document.getElementById('edit-product-description').value = product.description || '';
+            
+            // 重置标签复选框
+            document.querySelectorAll('#edit-product-form input[name="badges"]').forEach(checkbox => {
+                checkbox.checked = product.badges.includes(checkbox.value);
+            });
+            
+            // 显示模态框
+            document.getElementById('edit-product-modal').classList.remove('hidden');
+        }
+        
+        // 处理编辑产品
+        function handleEditProduct() {
+            try {
+                const productId = document.getElementById('edit-product-id').value;
+                const name = document.getElementById('edit-product-name').value.trim();
+                const price = parseFloat(document.getElementById('edit-product-price').value);
+                const model = document.getElementById('edit-product-model').value.trim();
+                const category = document.getElementById('edit-product-category').value;
+                const size = document.getElementById('edit-product-size').value ? document.getElementById('edit-product-size').value.trim() : '';
+                const style = document.getElementById('edit-product-style').value ? document.getElementById('edit-product-style').value.trim() : '';
+                const description = document.getElementById('edit-product-description').value ? document.getElementById('edit-product-description').value.trim() : '';
+                
+                // 获取选中的标签
+                const badges = [];
+                document.querySelectorAll('#edit-product-form input[name="badges"]:checked').forEach(checkbox => {
+                    badges.push(checkbox.value);
+                });
+                
+                // 验证必填字段
+                if (!name || isNaN(price) || !model || !category) {
+                    showNotification('更新失败', '请填写所有必填字段，且价格必须是有效数字', 'error');
+                    return;
+                }
+                
+                // 验证价格是否为正数
+                if (price <= 0) {
+                    showNotification('更新失败', '价格必须大于0', 'error');
+                    return;
+                }
+                
+                // 查找产品
+                const productIndex = products.findIndex(p => p.id === productId);
+                if (productIndex === -1) {
+                    showNotification('更新失败', '产品不存在', 'error');
+                    return;
+                }
+                
+                // 获取图片数据
+                let image = products[productIndex].image; // 默认使用原有图片
+                
+                // 如果有上传新图片，使用新图片
+                if (document.getElementById('edit-product-image-preview').classList.contains('hidden') === false) {
+                    // 使用预览中的图片
+                    image = document.getElementById('edit-product-image-preview').querySelector('img').src;
+                }
+                
+                // 更新产品信息
+                products[productIndex] = {
+                    ...products[productIndex],
+                    name,
+                    price,
+                    model,
+                    category,
+                    size,
+                    style,
+                    description,
+                    badges,
+                    image,
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // 保存产品数据
+                localStorage.setItem('products', JSON.stringify(products));
+                
+                // 重新渲染产品列表
+                renderProducts();
+                
+                // 关闭模态框
+                document.getElementById('edit-product-modal').classList.add('hidden');
+                
+                // 显示成功通知
+                showNotification('更新成功', '产品信息已成功更新', 'success');
+                
+                // 记录操作日志
+                addOperationLog('product', `更新产品: ${name}`);
+            } catch (error) {
+                console.error('更新产品失败:', error.message);
+                showNotification('更新失败', '产品更新失败，请重试', 'error');
+            }
+        }
+        
+        // 删除产品
+        function deleteProduct(productId) {
+            showConfirmDialog(
+                '删除产品',
+                '确定要删除此产品吗？此操作不可撤销。',
+                () => {
+                    try {
+                        const productIndex = products.findIndex(p => p.id === productId);
+                        if (productIndex === -1) {
+                            showNotification('删除失败', '产品不存在', 'error');
+                            return;
+                        }
+                        
+                        const productName = products[productIndex].name;
+                        
+                        // 从数组中删除产品
+                        products.splice(productIndex, 1);
+                        
+                        // 保存更新后的产品数据
+                        localStorage.setItem('products', JSON.stringify(products));
+                        
+                        // 重新渲染产品列表
+                        renderProducts();
+                        
+                        // 显示成功通知
+                        showNotification('删除成功', '产品已成功删除', 'success');
+                        
+                        // 记录操作日志
+                        addOperationLog('product', `删除产品: ${productName}`);
+                    } catch (error) {
+                        console.error('删除产品失败:', error.message);
+                        showNotification('删除失败', '删除产品时发生错误', 'error');
+                    }
+                }
+            );
+        }
+        
+        // 渲染用户列表
+        function renderUsers() {
+            const container = document.getElementById('users-list');
+            const noUsers = document.getElementById('no-users');
+            
+            // 清空容器
+            container.innerHTML = '';
+            
+            // 检查是否有用户
+            if (users.length === 0) {
+                container.classList.add('hidden');
+                noUsers.classList.remove('hidden');
+                return;
+            }
+            
+            // 显示用户列表
+            container.classList.remove('hidden');
+            noUsers.classList.add('hidden');
+            
+            // 渲染用户行
+            users.forEach(user => {
+                const row = document.createElement('tr');
+                
+                // 设置行内容
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-dark">${user.username}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-dark-2">${user.name}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="badge ${user.type === 'admin' ? 'badge-primary' : 'badge-secondary'}">${user.type === 'admin' ? '管理员' : '普通用户'}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="badge ${user.status === 'active' ? 'badge-success' : 'badge-danger'}">${user.status === 'active' ? '启用' : '禁用'}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-dark-3">
+                        ${formatDate(user.createdAt)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div class="flex gap-2">
+                            <button class="user-action p-1 text-dark-3 hover:text-primary" data-action="edit" data-id="${user.id}" title="编辑">
+                                <i class="fa fa-pencil"></i>
+                            </button>
+                            ${user.username !== 'admin' ? `
+                                <button class="user-action p-1 text-dark-3 hover:text-danger" data-action="delete" data-id="${user.id}" title="删除">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                `;
+                
+                container.appendChild(row);
+            });
+        }
+        
+        // 处理添加用户
+        function handleAddUser() {
+            try {
+                const username = document.getElementById('new-username').value.trim();
+                const name = document.getElementById('new-name').value.trim();
+                const password = document.getElementById('new-password').value;
+                const type = document.getElementById('new-type').value;
+                const status = document.getElementById('new-status').value;
+                
+                // 验证输入
+                if (!username || !name || !password) {
+                    showNotification('添加失败', '请填写所有必填字段', 'error');
+                    return;
+                }
+                
+                // 验证用户名格式
+                if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+                    showNotification('添加失败', '用户名必须为3-20位字母、数字或下划线', 'error');
+                    return;
+                }
+                
+                // 验证密码强度
+                if (password.length < 6) {
+                    showNotification('添加失败', '密码长度至少为6位', 'error');
+                    return;
+                }
+                
+                // 检查用户名是否已存在
+                if (users.some(user => user.username === username)) {
+                    showNotification('添加失败', '用户名已存在', 'error');
+                    return;
+                }
+                
+                // 对密码进行简单加密处理
+                const hashedPassword = btoa(password);
+                
+                // 创建新用户对象
+                const newUser = {
+                    id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    username,
+                    name,
+                    password: hashedPassword, // 存储加密后的密码
+                    type,
+                    status,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // 添加到用户数组
+                users.push(newUser);
+                
+                // 保存用户数据
+                saveData('users', users);
+                
+                // 重新渲染用户列表
+                renderUsers();
+                
+                // 关闭模态框
+                document.getElementById('add-user-modal').classList.add('hidden');
+                
+                // 重置表单
+                document.getElementById('add-user-form').reset();
+                
+                // 显示成功通知
+                showNotification('添加成功', '用户已成功添加', 'success');
+                
+                // 记录操作日志
+                addOperationLog('添加用户', `添加了用户: ${username}`);
+            } catch (error) {
+                console.error('添加用户失败:', error);
+                showNotification('添加失败', '添加用户时发生错误: ' + error.message, 'error');
+            }
+        }
+        
+        // 编辑用户
+        function editUser(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) {
+                showNotification('编辑失败', '用户不存在', 'error');
+                return;
+            }
+            
+            // 填充表单数据
+            document.getElementById('edit-user-id').value = user.id;
+            document.getElementById('edit-username').value = user.username;
+            document.getElementById('edit-name').value = user.name;
+            document.getElementById('edit-password').value = '';
+            document.getElementById('edit-type').value = user.type;
+            document.getElementById('edit-status').value = user.status;
+            
+            // 显示模态框
+            document.getElementById('edit-user-modal').classList.remove('hidden');
+        }
+        
+        // 处理编辑用户
+        function handleEditUser() {
+            try {
+                const userId = document.getElementById('edit-user-id').value;
+                const name = document.getElementById('edit-name').value.trim();
+                const password = document.getElementById('edit-password').value;
+                const type = document.getElementById('edit-type').value;
+                const status = document.getElementById('edit-status').value;
+                
+                // 验证必填字段
+                if (!name) {
+                    showNotification('更新失败', '请填写姓名', 'error');
+                    return;
+                }
+                
+                // 查找用户
+                const userIndex = users.findIndex(u => u.id === userId);
+                if (userIndex === -1) {
+                    showNotification('更新失败', '用户不存在', 'error');
+                    return;
+                }
+                
+                const username = users[userIndex].username;
+                
+                // 更新用户信息
+                users[userIndex] = {
+                    ...users[userIndex],
+                    name,
+                    type,
+                    status,
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // 如果密码不为空，则更新密码
+                if (password) {
+                    // 在实际应用中，这里应该对密码进行哈希处理
+                    users[userIndex].password = password;
+                }
+                
+                // 保存用户数据
+                localStorage.setItem('users', JSON.stringify(users));
+                
+                // 重新渲染用户列表
+                renderUsers();
+                
+                // 关闭模态框
+                document.getElementById('edit-user-modal').classList.add('hidden');
+                
+                // 显示成功通知
+                showNotification('更新成功', '用户信息已成功更新', 'success');
+                
+                // 记录操作日志
+                addOperationLog('user', `更新用户: ${username}`);
+            } catch (error) {
+                console.error('更新用户失败:', error.message);
+                showNotification('更新失败', '用户更新失败，请重试', 'error');
+            }
+        }
+        
+        // 删除用户
+        function deleteUser(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) {
+                showNotification('删除失败', '用户不存在', 'error');
+                return;
+            }
+            
+            if (user.username === 'admin') {
+                showNotification('删除失败', '不能删除管理员账户', 'error');
+                return;
+            }
+            
+            showConfirmDialog(
+                '删除用户',
+                `确定要删除用户 "${user.username}" 吗？此操作不可撤销。`,
+                () => {
+                    try {
+                        const userIndex = users.findIndex(u => u.id === userId);
+                        if (userIndex === -1) {
+                            showNotification('删除失败', '用户不存在', 'error');
+                            return;
+                        }
+                        
+                        const username = users[userIndex].username;
+                        
+                        // 从数组中删除用户
+                        users.splice(userIndex, 1);
+                        
+                        // 保存更新后的用户数据
+                        localStorage.setItem('users', JSON.stringify(users));
+                        
+                        // 重新渲染用户列表
+                        renderUsers();
+                        
+                        // 显示成功通知
+                        showNotification('删除成功', '用户已成功删除', 'success');
+                        
+                        // 记录操作日志
+                        addOperationLog('user', `删除用户: ${username}`);
+                    } catch (error) {
+                        console.error('删除用户失败:', error.message);
+                        showNotification('删除失败', '删除用户时发生错误', 'error');
+                    }
+                }
+            );
+        }
+        
+        // 墙体算砖
+        function calculateWallBricks() {
+            const length = parseFloat(document.getElementById('wall-length').value);
+            const height = parseFloat(document.getElementById('wall-height').value);
+            const thickness = parseFloat(document.getElementById('wall-thickness').value);
+            const mortar = parseFloat(document.getElementById('wall-mortar').value);
+            
+            // 验证输入
+            if (isNaN(length) || isNaN(height) || length <= 0 || height <= 0) {
+                showNotification('计算失败', '请输入有效的长度和高度', 'error');
+                return;
+            }
+            
+            // 计算面积
+            const area = length * height;
+            
+            // 根据墙体厚度调整计算结果
+            let bricksPerSquareMeter = 64; // 标准24cm墙每平方米砖数
+            if (thickness === 12) {
+                bricksPerSquareMeter = 32; // 12cm墙每平方米砖数
+            } else if (thickness === 0) {
+                bricksPerSquareMeter = 512; // 假设是贴瓷砖，每平方米瓷砖数
+            }
+            
+            // 考虑灰缝的影响
+            const mortarFactor = mortar > 0 ? 1 + (mortar / 100) : 1;
+            const totalBricks = Math.ceil(area * bricksPerSquareMeter * mortarFactor);
+            
+            // 显示结果
+            showCalculationResult({
+                type: '墙体算砖',
+                params: {
+                    length,
+                    height,
+                    thickness,
+                    mortar
+                },
+                result: {
+                    area,
+                    totalBricks,
+                    bricksPerSquareMeter
+                }
+            });
+            
+            // 保存计算历史
+            saveCalculationHistory({
+                type: '墙体算砖',
+                params: {
+                    length,
+                    height,
+                    thickness,
+                    mortar
+                },
+                result: {
+                    area,
+                    totalBricks,
+                    bricksPerSquareMeter
+                },
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        // 地面算砖
+        function calculateFloorBricks() {
+            const length = parseFloat(document.getElementById('floor-length').value);
+            const width = parseFloat(document.getElementById('floor-width').value);
+            const mortar = parseFloat(document.getElementById('floor-mortar').value);
+            
+            // 验证输入
+            if (isNaN(length) || isNaN(width) || length <= 0 || width <= 0) {
+                showNotification('计算失败', '请输入有效的长度和宽度', 'error');
+                return;
+            }
+            
+            // 计算面积
+            const area = length * width;
+            
+            // 假设使用60x60cm的瓷砖，每平方米需要约2.78块
+            let tilesPerSquareMeter = 2.78;
+            
+            // 考虑灰缝的影响
+            const mortarFactor = mortar > 0 ? 1 + (mortar / 100) : 1;
+            const totalTiles = Math.ceil(area * tilesPerSquareMeter * mortarFactor);
+            
+            // 显示结果
+            showCalculationResult({
+                type: '地面算砖',
+                params: {
+                    length,
+                    width,
+                    mortar
+                },
+                result: {
+                    area,
+                    totalTiles,
+                    tilesPerSquareMeter
+                }
+            });
+            
+            // 保存计算历史
+            saveCalculationHistory({
+                type: '地面算砖',
+                params: {
+                    length,
+                    width,
+                    mortar
+                },
+                result: {
+                    area,
+                    totalTiles,
+                    tilesPerSquareMeter
+                },
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        // 柱子算砖
+        function calculateColumnBricks() {
+            const perimeter = parseFloat(document.getElementById('column-perimeter').value);
+            const height = parseFloat(document.getElementById('column-height').value);
+            const mortar = parseFloat(document.getElementById('column-mortar').value);
+            
+            // 验证输入
+            if (isNaN(perimeter) || isNaN(height) || perimeter <= 0 || height <= 0) {
+                showNotification('计算失败', '请输入有效的周长和高度', 'error');
+                return;
+            }
+            
+            // 计算面积
+            const area = perimeter * height;
+            
+            // 假设每平方米需要64块砖
+            const bricksPerSquareMeter = 64;
+            
+            // 考虑灰缝的影响
+            const mortarFactor = mortar > 0 ? 1 + (mortar / 100) : 1;
+            const totalBricks = Math.ceil(area * bricksPerSquareMeter * mortarFactor);
+            
+            // 显示结果
+            showCalculationResult({
+                type: '柱子算砖',
+                params: {
+                    perimeter,
+                    height,
+                    mortar
+                },
+                result: {
+                    area,
+                    totalBricks,
+                    bricksPerSquareMeter
+                }
+            });
+            
+            // 保存计算历史
+            saveCalculationHistory({
+                type: '柱子算砖',
+                params: {
+                    perimeter,
+                    height,
+                    mortar
+                },
+                result: {
+                    area,
+                    totalBricks,
+                    bricksPerSquareMeter
+                },
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        // 面积算砖
+        function calculateAreaBricks() {
+            const area = parseFloat(document.getElementById('total-area').value);
+            const mortar = parseFloat(document.getElementById('area-mortar').value);
+            
+            // 验证输入
+            if (isNaN(area) || area <= 0) {
+                showNotification('计算失败', '请输入有效的面积', 'error');
+                return;
+            }
+            
+            // 假设使用60x60cm的瓷砖，每平方米需要约2.78块
+            const tilesPerSquareMeter = 2.78;
+            
+            // 考虑灰缝的影响
+            const mortarFactor = mortar > 0 ? 1 + (mortar / 100) : 1;
+            const totalTiles = Math.ceil(area * tilesPerSquareMeter * mortarFactor);
+            
+            // 显示结果
+            showCalculationResult({
+                type: '面积算砖',
+                params: {
+                    area,
+                    mortar
+                },
+                result: {
+                    totalTiles,
+                    tilesPerSquareMeter
+                }
+            });
+            
+            // 保存计算历史
+            saveCalculationHistory({
+                type: '面积算砖',
+                params: {
+                    area,
+                    mortar
+                },
+                result: {
+                    totalTiles,
+                    tilesPerSquareMeter
+                },
+                timestamp: new Date().toISOString()
+            });
+        }
+        
+        // 显示计算结果
+        function showCalculationResult(data) {
+            const resultContainer = document.getElementById('calculation-result');
+            
+            let resultHtml = '';
+            
+            if (data.type === '墙体算砖' || data.type === '柱子算砖') {
+                resultHtml = `
+                    <div class="space-y-4">
+                        <div class="bg-light-1 rounded-lg p-4">
+                            <h4 class="font-medium text-dark mb-2">计算结果</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-dark-3">面积</p>
+                                    <p class="text-lg font-semibold text-dark">${data.result.area.toFixed(2)} ㎡</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-dark-3">所需砖块</p>
+                                    <p class="text-lg font-semibold text-primary">${data.result.totalBricks} 块</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-dark-3">每平米用砖</p>
+                                    <p class="text-base font-medium text-dark">${data.result.bricksPerSquareMeter} 块</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-light-1 rounded-lg p-4">
+                            <h4 class="font-medium text-dark mb-2">计算参数</h4>
+                            <div class="space-y-2 text-sm">
+                                ${data.type === '墙体算砖' ? `
+                                    <p><span class="text-dark-3">墙体长度:</span> ${data.params.length} m</p>
+                                    <p><span class="text-dark-3">墙体高度:</span> ${data.params.height} m</p>
+                                    <p><span class="text-dark-3">墙体厚度:</span> ${data.params.thickness === 0 ? '无' : data.params.thickness + ' cm'}</p>
+                                ` : `
+                                    <p><span class="text-dark-3">柱子周长:</span> ${data.params.perimeter} m</p>
+                                    <p><span class="text-dark-3">柱子高度:</span> ${data.params.height} m</p>
+                                `}
+                                <p><span class="text-dark-3">灰缝厚度:</span> ${data.params.mortar} mm</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (data.type === '地面算砖') {
+                resultHtml = `
+                    <div class="space-y-4">
+                        <div class="bg-light-1 rounded-lg p-4">
+                            <h4 class="font-medium text-dark mb-2">计算结果</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-dark-3">面积</p>
+                                    <p class="text-lg font-semibold text-dark">${data.result.area.toFixed(2)} ㎡</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-dark-3">所需瓷砖</p>
+                                    <p class="text-lg font-semibold text-primary">${data.result.totalTiles} 块</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-dark-3">每平米用砖</p>
+                                    <p class="text-base font-medium text-dark">${data.result.tilesPerSquareMeter.toFixed(2)} 块</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-light-1 rounded-lg p-4">
+                            <h4 class="font-medium text-dark mb-2">计算参数</h4>
+                            <div class="space-y-2 text-sm">
+                                <p><span class="text-dark-3">地面长度:</span> ${data.params.length} m</p>
+                                <p><span class="text-dark-3">地面宽度:</span> ${data.params.width} m</p>
+                                <p><span class="text-dark-3">灰缝厚度:</span> ${data.params.mortar} mm</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (data.type === '面积算砖') {
+                resultHtml = `
+                    <div class="space-y-4">
+                        <div class="bg-light-1 rounded-lg p-4">
+                            <h4 class="font-medium text-dark mb-2">计算结果</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-sm text-dark-3">面积</p>
+                                    <p class="text-lg font-semibold text-dark">${data.params.area.toFixed(2)} ㎡</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-dark-3">所需瓷砖</p>
+                                    <p class="text-lg font-semibold text-primary">${data.result.totalTiles} 块</p>
+                                </div>
+                                <div>
+                                    <p class="text-sm text-dark-3">每平米用砖</p>
+                                    <p class="text-base font-medium text-dark">${data.result.tilesPerSquareMeter.toFixed(2)} 块</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="bg-light-1 rounded-lg p-4">
+                            <h4 class="font-medium text-dark mb-2">计算参数</h4>
+                            <div class="space-y-2 text-sm">
+                                <p><span class="text-dark-3">总面积:</span> ${data.params.area} ㎡</p>
+                                <p><span class="text-dark-3">灰缝厚度:</span> ${data.params.mortar} mm</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            resultContainer.innerHTML = resultHtml;
+        }
+        
+        // 保存计算历史
+        function saveCalculationHistory(data) {
+            calculationHistory.unshift(data);
+            
+            // 限制历史记录数量
+            if (calculationHistory.length > 50) {
+                calculationHistory = calculationHistory.slice(0, 50);
+            }
+            
+            // 保存到本地存储
+            localStorage.setItem('calculationHistory', JSON.stringify(calculationHistory));
+            
+            // 更新计算历史显示
+            renderCalculationHistory();
+            
+            // 记录操作日志
+            addOperationLog('calculation', `${data.type}计算`);
+        }
+        
+        // 渲染计算历史
+        function renderCalculationHistory() {
+            const container = document.querySelector('#calculation-history tbody');
+            const noHistory = document.getElementById('no-history');
+            
+            // 清空容器
+            container.innerHTML = '';
+            
+            // 检查是否有历史记录
+            if (calculationHistory.length === 0) {
+                container.classList.add('hidden');
+                noHistory.classList.remove('hidden');
+                return;
+            }
+            
+            // 显示历史记录
+            container.classList.remove('hidden');
+            noHistory.classList.add('hidden');
+            
+            // 渲染历史记录行
+            calculationHistory.forEach(history => {
+                const row = document.createElement('tr');
+                
+                // 格式化参数显示
+                let paramsText = '';
+                if (history.type === '墙体算砖') {
+                    paramsText = `长${history.params.length}m × 高${history.params.height}m × 厚${history.params.thickness === 0 ? '无' : history.params.thickness + 'cm'}`;
+                } else if (history.type === '地面算砖') {
+                    paramsText = `长${history.params.length}m × 宽${history.params.width}m`;
+                } else if (history.type === '柱子算砖') {
+                    paramsText = `周长${history.params.perimeter}m × 高${history.params.height}m`;
+                } else if (history.type === '面积算砖') {
+                    paramsText = `面积${history.params.area}㎡`;
+                }
+                
+                // 格式化结果显示
+                let resultText = '';
+                if (history.type === '墙体算砖' || history.type === '柱子算砖') {
+                    resultText = `${history.result.totalBricks}块 (${history.result.area.toFixed(2)}㎡)`;
+                } else {
+                    resultText = `${history.result.totalTiles}块 (${history.params.area.toFixed(2)}㎡)`;
+                }
+                
+                // 设置行内容
+                row.innerHTML = `
+                    <td class="px-4 py-3 whitespace-nowrap">
+                        <span class="badge badge-primary">${history.type}</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="text-sm text-dark-2">${paramsText}</div>
+                    </td>
+                    <td class="px-4 py-3">
+                        <div class="text-sm font-medium text-dark">${resultText}</div>
+                    </td>
+                    <td class="px-4 py-3 whitespace-nowrap text-sm text-dark-3">
+                        ${formatDate(history.timestamp)}
+                    </td>
+                `;
+                
+                container.appendChild(row);
+            });
+        }
+        
+        // 保存计算结果
+        function saveCalculation() {
+            showNotification('功能提示', '计算结果已自动保存到历史记录中', 'info');
+        }
+        
+        // 清空计算历史
+        function clearHistory() {
+            showConfirmDialog(
+                '清空计算历史',
+                '确定要清空所有计算历史吗？此操作不可撤销。',
+                () => {
+                    calculationHistory = [];
+                    localStorage.removeItem('calculationHistory');
+                    renderCalculationHistory();
+                    showNotification('清空成功', '计算历史已成功清空', 'success');
+                    addOperationLog('calculation', '清空计算历史');
+                }
+            );
+        }
+        
+        // 渲染操作日志
+        function renderOperationLogs() {
+            const container = document.getElementById('logs-list');
+            const noLogs = document.getElementById('no-logs');
+            
+            // 清空容器
+            container.innerHTML = '';
+            
+            // 筛选日志
+            let filteredLogs = operationLogs;
+            if (currentLogFilter !== 'all') {
+                filteredLogs = operationLogs.filter(log => log.type === currentLogFilter);
+            }
+            
+            // 检查是否有日志
+            if (filteredLogs.length === 0) {
+                container.classList.add('hidden');
+                noLogs.classList.remove('hidden');
+                return;
+            }
+            
+            // 显示日志列表
+            container.classList.remove('hidden');
+            noLogs.classList.add('hidden');
+            
+            // 渲染日志行
+            filteredLogs.forEach(log => {
+                const row = document.createElement('tr');
+                
+                // 设置行内容
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="badge ${getLogTypeBadgeClass(log.type)}">${getLogTypeText(log.type)}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-dark-2">${log.content}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-dark-2">${log.user || '系统'}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-dark-3">
+                        ${formatDate(log.timestamp)}
+                    </td>
+                `;
+                
+                container.appendChild(row);
+            });
+        }
+        
+        // 渲染筛选后的日志
+        function renderFilteredLogs(filteredLogs) {
+            const container = document.getElementById('logs-list');
+            const noLogs = document.getElementById('no-logs');
+            
+            // 清空容器
+            container.innerHTML = '';
+            
+            // 检查是否有日志
+            if (filteredLogs.length === 0) {
+                container.classList.add('hidden');
+                noLogs.classList.remove('hidden');
+                return;
+            }
+            
+            // 显示日志列表
+            container.classList.remove('hidden');
+            noLogs.classList.add('hidden');
+            
+            // 渲染日志行
+            filteredLogs.forEach(log => {
+                const row = document.createElement('tr');
+                
+                // 设置行内容
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="badge ${getLogTypeBadgeClass(log.type)}">${getLogTypeText(log.type)}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-sm text-dark-2">${log.content}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-dark-2">${log.user || '系统'}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-dark-3">
+                        ${formatDate(log.timestamp)}
+                    </td>
+                `;
+                
+                container.appendChild(row);
+            });
+        }
+        
+        // 获取日志类型标签样式
+        function getLogTypeBadgeClass(type) {
+            switch (type) {
+                case 'product':
+                    return 'badge-primary';
+                case 'user':
+                    return 'badge-secondary';
+                case 'calculation':
+                    return 'badge-success';
+                case 'system':
+                    return 'badge-warning';
+                default:
+                    return 'badge-secondary';
+            }
+        }
+        
+        // 获取日志类型文本
+        function getLogTypeText(type) {
+            switch (type) {
+                case 'product':
+                    return '产品操作';
+                case 'user':
+                    return '用户操作';
+                case 'calculation':
+                    return '计算操作';
+                case 'system':
+                    return '系统操作';
+                default:
+                    return '其他操作';
+            }
+        }
+        
+        // 添加操作日志
+        async function addOperationLog(type, content) {
+            try {
+                const log = {
+                    id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    type,
+                    content,
+                    user: currentUser ? currentUser.username : '系统',
+                    timestamp: new Date().toISOString()
+                };
+                
+                operationLogs.unshift(log);
+                
+                // 限制日志数量
+                if (operationLogs.length > 100) {
+                    operationLogs = operationLogs.slice(0, 100);
+                }
+                
+                // 保存到Supabase
+                await saveData('operationLogs', operationLogs);
+                
+                // 如果当前页面是日志页面，则更新日志显示
+                if (currentPage === 'logs-page') {
+                    renderOperationLogs();
+                }
+                
+                return true;
+            } catch (error) {
+                console.error('添加操作日志失败:', error.message);
+                return false;
+            }
+        }
+        
+
+        
+        // 显示通知
+        function showNotification(title, message, type = 'success') {
+            const notification = document.getElementById('notification');
+            const notificationTitle = document.getElementById('notification-title');
+            const notificationMessage = document.getElementById('notification-message');
+            const notificationIcon = document.getElementById('notification-icon');
+            
+            // 设置通知内容
+            notificationTitle.textContent = title;
+            notificationMessage.textContent = message;
+            
+            // 设置通知类型样式
+            notification.className = 'fixed top-4 right-4 z-50 max-w-xs';
+            
+            let iconClass = 'fa-check-circle';
+            let borderClass = 'border-primary';
+            
+            switch (type) {
+                case 'error':
+                    iconClass = 'fa-exclamation-circle';
+                    borderClass = 'border-danger';
+                    break;
+                case 'warning':
+                    iconClass = 'fa-exclamation-triangle';
+                    borderClass = 'border-warning';
+                    break;
+                case 'info':
+                    iconClass = 'fa-info-circle';
+                    borderClass = 'border-secondary';
+                    break;
+            }
+            
+            notificationIcon.innerHTML = `<i class="fa ${iconClass} text-xl"></i>`;
+            notification.classList.add(`border-l-4`, borderClass);
+            notification.classList.add('bg-white', 'rounded-lg', 'shadow-lg', 'p-4');
+            
+            // 显示通知
+            notification.classList.remove('hidden');
+            
+            // 3秒后自动隐藏
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
+        }
+        
+        // 清除所有数据
+        function clearAllData() {
+            try {
+                // 清除所有数据
+                products = [];
+                users = [];
+                calculationHistory = [];
+                operationLogs = [];
+                
+                // 清除本地存储
+                localStorage.removeItem('products');
+                localStorage.removeItem('users');
+                localStorage.removeItem('calculationHistory');
+                localStorage.removeItem('operationLogs');
+                
+                // 重新渲染所有列表
+                renderProducts();
+                renderUsers();
+                renderCalculationHistory();
+                renderOperationLogs();
+                
+                // 显示成功通知
+                showNotification('清除成功', '所有数据已成功清除', 'success');
+                
+                // 记录操作日志
+                addOperationLog('system', '清除所有数据');
+            } catch (error) {
+                console.error('清除数据失败:', error.message);
+                showNotification('清除失败', '清除数据时发生错误', 'error');
+            }
+        }
+        
+        // 导出数据
+        function exportData() {
+            try {
+                const data = {
+                    products,
+                    users,
+                    calculationHistory,
+                    operationLogs,
+                    exportDate: new Date().toISOString()
+                };
+                
+                const dataStr = JSON.stringify(data, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `marco-polo-export-${formatDateForFilename(new Date())}.json`;
+                link.click();
+                
+                showNotification('导出成功', '数据已成功导出', 'success');
+                addOperationLog('system', '导出数据');
+            } catch (error) {
+                console.error('导出数据失败:', error.message);
+                showNotification('导出失败', '导出数据时发生错误', 'error');
+            }
+        }
+        
+        // 导入数据
+        function importData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    
+                    showConfirmDialog(
+                        '导入数据',
+                        '导入数据将覆盖当前系统中的所有数据，确定要继续吗？',
+                        () => {
+                            try {
+                                // 导入数据
+                                if (data.products) products = data.products;
+                                if (data.users) users = data.users;
+                                if (data.calculationHistory) calculationHistory = data.calculationHistory;
+                                if (data.operationLogs) operationLogs = data.operationLogs;
+                                
+                                // 保存到本地存储
+                                localStorage.setItem('products', JSON.stringify(products));
+                                localStorage.setItem('users', JSON.stringify(users));
+                                localStorage.setItem('calculationHistory', JSON.stringify(calculationHistory));
+                                localStorage.setItem('operationLogs', JSON.stringify(operationLogs));
+                                
+                                // 重新渲染所有列表
+                                renderProducts();
+                                renderUsers();
+                                renderCalculationHistory();
+                                renderOperationLogs();
+                                
+                                // 显示成功通知
+                                showNotification('导入成功', '数据已成功导入', 'success');
+                                addOperationLog('system', '导入数据');
+                            } catch (error) {
+                                console.error('导入数据失败:', error.message);
+                                showNotification('导入失败', '导入数据时发生错误', 'error');
+                            }
+                        }
+                    );
+                } catch (error) {
+                    console.error('解析导入文件失败:', error.message);
+                    showNotification('导入失败', '导入文件格式不正确', 'error');
+                }
+            };
+            reader.readAsText(file);
+            
+            // 重置文件输入
+            e.target.value = '';
+        }
+        
+        // 格式化日期
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // 格式化日期用于文件名
+        function formatDateForFilename(date) {
+            return date.toISOString()
+                .replace(/:/g, '-')
+                .replace(/T/g, '_')
+                .split('.')[0];
+        }
+        
+        // 导出产品数据
+        function exportProductsData() {
+            try {
+                const data = {
+                    products,
+                    exportDate: new Date().toISOString(),
+                    version: '1.0'
+                };
+                
+                const dataStr = JSON.stringify(data, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `marco-polo-products-${formatDateForFilename(new Date())}.json`;
+                link.click();
+                
+                showNotification('导出成功', '产品数据已成功导出', 'success');
+                addOperationLog('system', '导出产品数据');
+            } catch (error) {
+                console.error('导出产品数据失败:', error.message);
+                showNotification('导出失败', '导出产品数据时发生错误', 'error');
+            }
+        }
+        
+        // 导入产品数据
+        function importProductsData(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    
+                    if (!data.products || !Array.isArray(data.products)) {
+                        showNotification('导入失败', '导入文件格式不正确，缺少产品数据', 'error');
+                        return;
+                    }
+                    
+                    showConfirmDialog(
+                        '导入产品数据',
+                        `确定要导入 ${data.products.length} 个产品吗？这将覆盖当前的产品数据。`,
+                        () => {
+                            try {
+                                // 导入产品数据
+                                products = data.products;
+                                
+                                // 保存到本地存储
+                                localStorage.setItem('products', JSON.stringify(products));
+                                
+                                // 重新渲染产品列表
+                                renderProducts();
+                                
+                                // 显示成功通知
+                                showNotification('导入成功', `成功导入 ${data.products.length} 个产品`, 'success');
+                                addOperationLog('system', `导入产品数据，共 ${data.products.length} 个产品`);
+                            } catch (error) {
+                                console.error('导入产品数据失败:', error.message);
+                                showNotification('导入失败', '导入产品数据时发生错误', 'error');
+                            }
+                        }
+                    );
+                } catch (error) {
+                    console.error('解析导入文件失败:', error.message);
+                    showNotification('导入失败', '导入文件格式不正确', 'error');
+                }
+            };
+            reader.readAsText(file);
+            
+            // 重置文件输入
+            e.target.value = '';
+        }
+        
+        // 导出产品数据CSV格式
+        function exportProductsCSV() {
+            try {
+                if (products.length === 0) {
+                    showNotification('导出失败', '没有产品数据可导出', 'warning');
+                    return;
+                }
+                
+                // CSV表头
+                const headers = ['产品名称', '价格', '型号', '分类', '尺寸', '风格', '描述', '标签', '创建时间', '更新时间'];
+                
+                // 转换产品数据为CSV行
+                const rows = products.map(product => {
+                    return [
+                        `"${product.name.replace(/"/g, '""')}"`, // 转义双引号
+                        product.price.toFixed(2),
+                        `"${product.model.replace(/"/g, '""')}"`,
+                        getCategoryName(product.category),
+                        `"${(product.size || '').replace(/"/g, '""')}"`,
+                        `"${(product.style || '').replace(/"/g, '""')}"`,
+                        `"${(product.description || '').replace(/"/g, '""')}"`,
+                        `"${(product.badges || []).map(getBadgeName).join(', ')}"`,
+                        formatDate(product.createdAt),
+                        formatDate(product.updatedAt)
+                    ].join(',');
+                });
+                
+                // 组合CSV内容
+                const csvContent = [
+                    headers.join(','), // 表头
+                    ...rows // 数据行
+                ].join('\n');
+                
+                // 创建Blob并下载
+                const dataBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(dataBlob);
+                link.download = `marco-polo-products-${formatDateForFilename(new Date())}.csv`;
+                link.click();
+                
+                showNotification('导出成功', '产品数据已成功导出为CSV格式', 'success');
+                addOperationLog('system', '导出产品数据CSV格式');
+            } catch (error) {
+                console.error('导出CSV失败:', error.message);
+                showNotification('导出失败', '导出CSV格式时发生错误', 'error');
+            }
+        }
+        
+        // 导入产品数据CSV格式
+        function importProductsCSV(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const csvContent = event.target.result;
+                    const lines = csvContent.split('\n');
+                    
+                    if (lines.length < 2) {
+                        showNotification('导入失败', 'CSV文件格式不正确，至少需要包含表头和一行数据', 'error');
+                        return;
+                    }
+                    
+                    // 解析CSV
+                    const importedProducts = [];
+                    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                    
+                    for (let i = 1; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (!line) continue;
+                        
+                        // 解析CSV行，处理引号内的逗号
+                        const values = [];
+                        let current = '';
+                        let inQuotes = false;
+                        
+                        for (let j = 0; j < line.length; j++) {
+                            const char = line[j];
+                            const nextChar = line[j + 1];
+                            
+                            if (char === '"' && nextChar === '"') {
+                                // 处理转义的双引号
+                                current += '"';
+                                j++; // 跳过下一个引号
+                            } else if (char === '"') {
+                                inQuotes = !inQuotes;
+                            } else if (char === ',' && !inQuotes) {
+                                values.push(current.trim());
+                                current = '';
+                            } else {
+                                current += char;
+                            }
+                        }
+                        values.push(current.trim());
+                        
+                        // 创建产品对象
+                        const product = {
+                            id: 'prod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                            name: values[0] || '',
+                            price: parseFloat(values[1]) || 0,
+                            model: values[2] || '',
+                            category: getCategoryValue(values[3]) || 'other',
+                            size: values[4] || '',
+                            style: values[5] || '',
+                            description: values[6] || '',
+                            badges: values[7] ? values[7].split(',').map(b => getBadgeValue(b.trim())) : [],
+                            image: 'https://picsum.photos/seed/' + (values[0] || 'product') + '/' + Date.now() + '/400/300',
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                        };
+                        
+                        importedProducts.push(product);
+                    }
+                    
+                    if (importedProducts.length === 0) {
+                        showNotification('导入失败', '未找到有效的产品数据', 'error');
+                        return;
+                    }
+                    
+                    showConfirmDialog(
+                        '导入产品数据',
+                        `确定要导入 ${importedProducts.length} 个产品吗？这将覆盖当前的产品数据。`,
+                        () => {
+                            try {
+                                // 导入产品数据
+                                products = importedProducts;
+                                
+                                // 保存到本地存储
+                                localStorage.setItem('products', JSON.stringify(products));
+                                
+                                // 重新渲染产品列表
+                                renderProducts();
+                                
+                                // 显示成功通知
+                                showNotification('导入成功', `成功导入 ${importedProducts.length} 个产品`, 'success');
+                                addOperationLog('system', `导入产品数据CSV格式，共 ${importedProducts.length} 个产品`);
+                            } catch (error) {
+                                console.error('导入产品数据失败:', error.message);
+                                showNotification('导入失败', '导入产品数据时发生错误', 'error');
+                            }
+                        }
+                    );
+                } catch (error) {
+                    console.error('解析CSV文件失败:', error.message);
+                    showNotification('导入失败', 'CSV文件格式不正确', 'error');
+                }
+            };
+            reader.readAsText(file);
+            
+            // 重置文件输入
+            e.target.value = '';
+        }
+        
+        // 清除产品数据
+        function clearProductsData() {
+            try {
+                const productCount = products.length;
+                products = [];
+                localStorage.removeItem('products');
+                renderProducts();
+                
+                showNotification('清除成功', `已成功清除 ${productCount} 个产品数据`, 'success');
+                addOperationLog('system', `清除所有产品数据，共 ${productCount} 个产品`);
+            } catch (error) {
+                console.error('清除产品数据失败:', error.message);
+                showNotification('清除失败', '清除产品数据时发生错误', 'error');
+            }
+        }
+        
+        // 辅助函数：获取分类名称
+        function getCategoryName(category) {
+            const categories = {
+                'tile': '瓷砖',
+                'stone': '石材',
+                'floor': '地板',
+                'other': '其他'
+            };
+            return categories[category] || category || '其他';
+        }
+        
+        // 辅助函数：获取分类值
+        function getCategoryValue(categoryName) {
+            const categoryMap = {
+                '瓷砖': 'tile',
+                '石材': 'stone',
+                '地板': 'floor',
+                '其他': 'other'
+            };
+            
+            // 尝试直接匹配
+            if (categoryMap[categoryName]) {
+                return categoryMap[categoryName];
+            }
+            
+            // 尝试模糊匹配
+            for (const [name, value] of Object.entries(categoryMap)) {
+                if (categoryName.includes(name)) {
+                    return value;
+                }
+            }
+            
+            return 'other';
+        }
+        
+        // 辅助函数：获取标签名称
+        function getBadgeName(badge) {
+            const badges = {
+                'on-sale': '在售',
+                'hot': '爆款',
+                'bargain': '特价',
+                'new': '新品',
+                'discontinued': '停售'
+            };
+            return badges[badge] || badge;
+        }
+        
+        // 辅助函数：获取标签值
+        function getBadgeValue(badgeName) {
+            const badgeMap = {
+                '在售': 'on-sale',
+                '爆款': 'hot',
+                '特价': 'bargain',
+                '新品': 'new',
+                '停售': 'discontinued'
+            };
+            
+            // 尝试直接匹配
+            if (badgeMap[badgeName]) {
+                return badgeMap[badgeName];
+            }
+            
+            // 尝试模糊匹配
+            for (const [name, value] of Object.entries(badgeMap)) {
+                if (badgeName.includes(name)) {
+                    return value;
+                }
+            }
+            
+            return 'on-sale'; // 默认值
+        }
+    </script>
+
+</body></html>
