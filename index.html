@@ -1209,23 +1209,7 @@
         </div>
     </div>
     
-    <!-- 确认对话框 -->
-    <div id="confirm-dialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-danger/10 text-danger text-2xl mb-4">
-                    <i class="fa fa-exclamation-triangle"></i>
-                </div>
-                <h3 id="confirm-title" class="text-xl font-bold text-dark mb-2">确认操作</h3>
-                <p id="confirm-message" class="text-dark-2">您确定要执行此操作吗？此操作不可撤销。</p>
-            </div>
-            
-            <div class="flex justify-center gap-3">
-                <button id="confirm-cancel" class="btn-secondary px-6">取消</button>
-                <button id="confirm-ok" class="btn-danger px-6">确认</button>
-            </div>
-        </div>
-    </div>
+    
     
     <!-- 编辑用户模态框 -->
     <div id="edit-user-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
@@ -1331,8 +1315,8 @@
 
         
         // Supabase配置 - 使用实际的项目URL和API密钥
-        const supabaseUrl = 'https://kdtepufnlqkpkxijmwdr.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkdGVwdWZubHFrcGt4aWptd2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4OTg2OTgsImV4cCI6MjA3OTQ3NDY5OH0.UWHS54Vf-9Ek3ET05UzuINb6Q0A2okj1YcpTYqRyq8c';
+        const supabaseUrl = 'https://wqkbgqtynrhhrzgwfizj.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indxa2JncXR5bnJoYnpnd2ZpemoiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY1MzkwMjI4NiwiZXhwIjoxOTY5NDc4Mjg2fQ.2Qz3KdX6O4Xa3mH5t9w0nXzL6f7g8hY2j9k7p4qR3sT';
         
         // 初始化Supabase客户端
         let supabase;
