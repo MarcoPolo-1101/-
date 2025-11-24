@@ -9,19 +9,8 @@
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
     
-    <!-- Supabase SDK - 使用ES模块版本 -->
-    <script type="module">
-        // 动态导入Supabase SDK
-        try {
-            const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/+esm');
-            window.createClient = createClient;
-            console.log('✅ Supabase SDK动态导入成功');
-        } catch (error) {
-            console.error('❌ Supabase SDK动态导入失败:', error);
-        }
-    </script>
-    <!-- 备用方案：传统UMD版本 -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js" defer></script>
+    <!-- 直接使用官方CDN的Supabase SDK -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <script>
         // 确保Supabase SDK正确加载的备用方案
         window.addEventListener('load', function() {
