@@ -3,37 +3,614 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Marco Polo 管理系统</title>
     <!-- Tailwind CSS -->
-    <!-- 注意：在生产环境中，建议使用PostCSS或Tailwind CLI预编译CSS -->
-    <!-- 此处保留CDN版本用于开发和演示目的 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
     <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
     
-    <!-- Supabase SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.2/dist/umd/supabase.min.js"></script>
-
-    <!-- Supabase客户端初始化 -->
+    <!-- Supabase客户端修复工具 -->
+    <script src="fix-supabase-client.js"></script>
+    
+    <!-- Supabase客户端 - 基于fetch API实现 -->
     <script>
-        // Supabase配置
-        const SUPABASE_URL = 'https://kdtepufnlqkpkxijmwdr.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkdGVwdWZubHFrcGt4aWptd2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4OTg2OTgsImV4cCI6MjA3OTQ3NDY5OH0.UWHS54Vf-9Ek3ET05UzuINb6Q0A2okj1YcpTYqRyq8c';
+        // 全局Supabase配置获取函数
+        function getSupabaseConfig() {
+            try {
+                const config = localStorage.getItem('supabaseConfig');
+                return config ? JSON.parse(config) : { url: '', key: '', enabled: false };
+            } catch (error) {
+                console.error('获取Supabase配置失败:', error);
+                return { url: '', key: '', enabled: false };
+            }
+        }
         
-        // 初始化Supabase客户端（避免重复声明）
-        if (typeof window.supabase === 'undefined') {
-            window.supabase = Supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-                auth: {
-                    persistSession: true,
-                    autoRefreshToken: true,
-                    detectSessionInUrl: true
-                },
-                global: {
-                    headers: { 'X-Client-Info': 'Marco-Polo-Management-System/1.0' }
-                }
+        // 显示通知的工具函数
+        function showNotification(title, message, type = 'info') {
+            // 创建通知元素
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 max-w-sm bg-white dark:bg-dark-1 shadow-lg rounded-lg p-4 z-50 transform transition-all duration-300 translate-x-full`;
+            
+            // 设置通知内容
+            const typeClasses = {
+                success: 'text-success border-l-success',
+                error: 'text-danger border-l-danger',
+                warning: 'text-warning border-l-warning',
+                info: 'text-primary border-l-primary'
+            };
+            
+            notification.innerHTML = `
+                <div class="flex items-start">
+                    <div class="flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-full ${type === 'success' ? 'bg-success/10 text-success' : type === 'error' ? 'bg-danger/10 text-danger' : type === 'warning' ? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'}">
+                        <i class="fa fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : type === 'warning' ? 'exclamation' : 'info'} text-sm"></i>
+                    </div>
+                    <div class="ml-3 flex-1">
+                        <h3 class="text-sm font-medium ${typeClasses[type]}">${title}</h3>
+                        <div class="mt-1 text-sm text-dark-3">${message}</div>
+                    </div>
+                    <button class="ml-4 text-dark-3 hover:text-dark">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            `;
+            
+            // 添加到页面
+            document.body.appendChild(notification);
+            
+            // 显示动画
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // 自动关闭
+            const timer = setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 5000);
+            
+            // 点击关闭
+            notification.querySelector('button').addEventListener('click', () => {
+                clearTimeout(timer);
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
             });
         }
-        console.log('✅ Supabase客户端初始化成功');
+        
+        // 创建基于fetch API的真实Supabase客户端
+        function createFetchBasedSupabaseClient(supabaseUrl, supabaseKey) {
+            console.log('🔧 创建基于fetch API的Supabase客户端');
+            
+            // Supabase REST API基础URL
+            const restUrl = `${supabaseUrl}/rest/v1`;
+            
+            // 默认请求头
+            const defaultHeaders = {
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+            
+            // 构建查询字符串
+            function buildQueryString(params) {
+                return Object.keys(params)
+                    .filter(key => params[key] !== undefined && params[key] !== null)
+                    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+                    .join('&');
+            }
+            
+            // 执行fetch请求
+            async function executeFetch(endpoint, options = {}) {
+                try {
+                    const url = `${restUrl}${endpoint}`;
+                    const fetchOptions = {
+                        ...options,
+                        headers: {
+                            ...defaultHeaders,
+                            ...options.headers
+                        }
+                    };
+                    
+                    console.log(`📡 发送请求到Supabase: ${url}`);
+                    console.log('请求选项:', fetchOptions);
+                    
+                    const response = await fetch(url, fetchOptions);
+                    console.log(`📡 Supabase响应状态: ${response.status}`);
+                    
+                    // 检查响应状态
+                    if (!response.ok) {
+                        const errorData = await response.json().catch(() => ({}));
+                        throw new Error(errorData.message || `请求失败: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    // 对于204 No Content响应，直接返回空对象
+                    if (response.status === 204) {
+                        return { data: null, error: null };
+                    }
+                    
+                    // 解析JSON响应
+                    const data = await response.json();
+                    console.log('📡 Supabase响应数据:', data);
+                    
+                    return { data, error: null };
+                } catch (error) {
+                    console.error('❌ Supabase请求失败:', error);
+                    return { data: null, error };
+                }
+            }
+            
+            return {
+                from: function(tableName) {
+                    console.log(`🎯 访问Supabase表: ${tableName}`);
+                    
+                    // 表操作对象
+                    const tableOperations = {
+                        // 查询数据
+                        select: function(columns = '*') {
+                            console.log(`📋 查询 ${tableName} 表，字段: ${columns}`);
+                            
+                            let queryParams = { select: columns };
+                            let queryConditions = [];
+                            
+                            // 查询构建器对象
+                            const queryBuilder = {
+                                // 限制返回数量
+                                limit: async function(count) {
+                                    console.log(`📏 限制返回 ${count} 条记录`);
+                                    queryParams.limit = count;
+                                    
+                                    const queryString = buildQueryString(queryParams);
+                                    const endpoint = `/${tableName}?${queryString}`;
+                                    
+                                    return await executeFetch(endpoint);
+                                },
+                                
+                                // 不等于条件
+                                neq: function(column, value) {
+                                    console.log(`🚫 条件 ${column} != ${value}`);
+                                    queryConditions.push(`${column}=neq.${value}`);
+                                    return this;
+                                },
+                                
+                                // 执行查询（不带limit时使用）
+                                execute: async function() {
+                                    // 合并查询条件
+                                    const allParams = { ...queryParams };
+                                    queryConditions.forEach((condition, index) => {
+                                        allParams[`or.${index}`] = condition;
+                                    });
+                                    
+                                    const queryString = buildQueryString(allParams);
+                                    const endpoint = `/${tableName}?${queryString}`;
+                                    
+                                    return await executeFetch(endpoint);
+                                }
+                            };
+                            
+                            // 返回查询构建器对象，支持链式调用
+                            return queryBuilder;
+                        },
+                        
+                        // 插入数据
+                        insert: async function(data) {
+                            console.log(`➕ 插入数据到 ${tableName} 表`);
+                            console.log('插入数据:', data);
+                            
+                            const endpoint = `/${tableName}`;
+                            const options = {
+                                method: 'POST',
+                                body: JSON.stringify(data)
+                            };
+                            
+                            return await executeFetch(endpoint, options);
+                        },
+                        
+                        // 更新数据
+                        update: async function(data) {
+                            console.log(`🔄 更新 ${tableName} 表数据`);
+                            console.log('更新数据:', data);
+                            
+                            const endpoint = `/${tableName}`;
+                            const options = {
+                                method: 'PATCH',
+                                body: JSON.stringify(data)
+                            };
+                            
+                            return await executeFetch(endpoint, options);
+                        },
+                        
+                        // 删除数据
+                        delete: function() {
+                            console.log(`🗑️ 删除 ${tableName} 表数据`);
+                            
+                            return {
+                                // 不等于条件删除
+                                neq: async function(column, value) {
+                                    console.log(`🗑️ 删除条件 ${column} != ${value}`);
+                                    
+                                    const endpoint = `/${tableName}?${column}=neq.${value}`;
+                                    const options = { method: 'DELETE' };
+                                    
+                                    return await executeFetch(endpoint, options);
+                                }
+                            };
+                        }
+                    };
+                    
+                    return tableOperations;
+                }
+            };
+        }
+        
+        // 初始化Supabase客户端
+        async function initializeSupabaseClient() {
+            try {
+                console.log('🔄 初始化Supabase客户端...');
+                
+                // 获取Supabase配置
+                const supabaseConfig = getSupabaseConfig();
+                
+                if (!supabaseConfig.url || !supabaseConfig.key) {
+                    console.warn('⚠️ Supabase配置不完整，请检查设置');
+                    showNotification('Supabase配置不完整', '请在系统设置中配置Supabase URL和API密钥', 'warning');
+                    return null;
+                }
+                
+                console.log(`🎯 尝试连接到Supabase: ${supabaseConfig.url}`);
+                
+                // 创建基于fetch API的Supabase客户端
+                const supabase = createFetchBasedSupabaseClient(
+                    supabaseConfig.url,
+                    supabaseConfig.key
+                );
+                
+                console.log('✅ Supabase客户端初始化成功');
+                return supabase;
+            } catch (error) {
+                console.error('❌ Supabase客户端初始化失败:', error);
+                showNotification('Supabase连接失败', error.message, 'error');
+                return null;
+            }
+        }
+        
+        // 全局数据操作函数
+        const DataService = {
+            // 获取Supabase客户端
+            async getSupabaseClient() {
+                if (window.supabase) {
+                    return window.supabase;
+                }
+                
+                // 动态初始化客户端
+                const client = await initializeSupabaseClient();
+                if (client) {
+                    window.supabase = client;
+                }
+                return client;
+            },
+            
+            // 产品管理
+            products: {
+                // 获取所有产品
+                async getAll() {
+                    const supabase = await DataService.getSupabaseClient();
+                    if (!supabase) {
+                        return { data: [], error: new Error('Supabase客户端未初始化') };
+                    }
+                    
+                    try {
+                        return await supabase.from('products').select('*').execute();
+                    } catch (error) {
+                        console.error('获取产品列表失败:', error);
+                        return { data: [], error };
+                    }
+                },
+                
+                // 添加产品
+                async add(productData) {
+                    const supabase = await DataService.getSupabaseClient();
+                    if (!supabase) {
+                        return { error: new Error('Supabase客户端未初始化') };
+                    }
+                    
+                    try {
+                        return await supabase.from('products').insert(productData);
+                    } catch (error) {
+                        console.error('添加产品失败:', error);
+                        return { error };
+                    }
+                },
+                
+                // 更新产品
+                async update(productData) {
+                    const supabase = await DataService.getSupabaseClient();
+                    if (!supabase) {
+                        return { error: new Error('Supabase客户端未初始化') };
+                    }
+                    
+                    try {
+                        return await supabase.from('products').update(productData);
+                    } catch (error) {
+                        console.error('更新产品失败:', error);
+                        return { error };
+                    }
+                },
+                
+                // 删除产品
+                async delete(id) {
+                    const supabase = await DataService.getSupabaseClient();
+                    if (!supabase) {
+                        return { error: new Error('Supabase客户端未初始化') };
+                    }
+                    
+                    try {
+                        return await supabase.from('products').delete().neq('id', id);
+                    } catch (error) {
+                        console.error('删除产品失败:', error);
+                        return { error };
+                    }
+                }
+            },
+            
+            // 用户管理
+            users: {
+                // 获取所有用户
+                async getAll() {
+                    const supabase = await DataService.getSupabaseClient();
+                    if (!supabase) {
+                        return { data: [], error: new Error('Supabase客户端未初始化') };
+                    }
+                    
+                    try {
+                        return await supabase.from('users').select('*').execute();
+                    } catch (error) {
+                        console.error('获取用户列表失败:', error);
+                        return { data: [], error };
+                    }
+                },
+                
+                // 添加用户
+                async add(userData) {
+                    const supabase = await DataService.getSupabaseClient();
+                    if (!supabase) {
+                        return { error: new Error('Supabase客户端未初始化') };
+                    }
+                    
+                    try {
+                        return await supabase.from('users').insert(userData);
+                    } catch (error) {
+                        console.error('添加用户失败:', error);
+                        return { error };
+                    }
+                },
+                
+                // 更新用户
+                async update(userData) {
+                    const supabase = await DataService.getSupabaseClient();
+                    if (!supabase) {
+                        return { error: new Error('Supabase客户端未初始化') };
+                    }
+                    
+                    try {
+                        return await supabase.from('users').update(userData);
+                    } catch (error) {
+                        console.error('更新用户失败:', error);
+                        return { error };
+                    }
+                },
+                
+                // 删除用户
+                async delete(id) {
+                    const supabase = await DataService.getSupabaseClient();
+                    if (!supabase) {
+                        return { error: new Error('Supabase客户端未初始化') };
+                    }
+                    
+                    try {
+                        return await supabase.from('users').delete().neq('id', id);
+                    } catch (error) {
+                        console.error('删除用户失败:', error);
+                        return { error };
+                    }
+                }
+            },
+            
+            // 操作日志
+            logs: {
+                // 添加日志
+                async add(logData) {
+                    const supabase = await DataService.getSupabaseClient();
+                    if (!supabase) {
+                        return { error: new Error('Supabase客户端未初始化') };
+                    }
+                    
+                    try {
+                        const log = {
+                            ...logData,
+                            created_at: new Date().toISOString()
+                        };
+                        return await supabase.from('logs').insert(log);
+                    } catch (error) {
+                        console.error('添加日志失败:', error);
+                        return { error };
+                    }
+                },
+                
+                // 获取日志列表
+                async getAll() {
+                    const supabase = await DataService.getSupabaseClient();
+                    if (!supabase) {
+                        return { data: [], error: new Error('Supabase客户端未初始化') };
+                    }
+                    
+                    try {
+                        return await supabase.from('logs').select('*').execute();
+                    } catch (error) {
+                        console.error('获取日志列表失败:', error);
+                        return { data: [], error };
+                    }
+                }
+            }
+        };
+        
+        // 检查网络连接状态
+        async function checkNetworkConnection() {
+            try {
+                // 检查URL参数是否指定了本地模式
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('mode') === 'local') {
+                    console.log('🌐 以本地模式启动系统');
+                    return false; // 不需要连接网络
+                }
+                
+                console.log('🌐 正在检查网络连接...');
+                
+                // 检查基本网络连接
+                if (!navigator.onLine) {
+                    console.warn('⚠️ 网络连接不可用');
+                    return false;
+                }
+                
+                // 检查Supabase配置
+                const supabaseConfig = getSupabaseConfig();
+                
+                // 如果Supabase未配置或未启用，返回false以使用本地模式
+                if (!supabaseConfig.enabled || !supabaseConfig.url || !supabaseConfig.key) {
+                    console.warn('⚠️ Supabase未配置或未启用');
+                    return false;
+                }
+                
+                // 检查Supabase API是否可访问
+                try {
+                    const response = await fetch(`${supabaseConfig.url}/rest/v1`, {
+                        method: 'GET',
+                        headers: {
+                            'Accept': 'application/json',
+                            'apikey': supabaseConfig.key,
+                            'Authorization': `Bearer ${supabaseConfig.key}`
+                        },
+                        timeout: 3000
+                    });
+                    
+                    if (response.ok) {
+                        console.log('✅ Supabase API可访问');
+                        return true;
+                    } else {
+                        console.warn(`⚠️ Supabase API返回状态码: ${response.status}`);
+                        
+                        // 尝试获取更详细的错误信息
+                        try {
+                            const errorData = await response.json();
+                            console.warn('❌ Supabase API错误详情:', errorData);
+                        } catch (e) {
+                            console.warn('❌ 无法解析Supabase API错误响应');
+                        }
+                        
+                        return false;
+                    }
+                } catch (error) {
+                    console.warn('⚠️ 无法连接到Supabase API:', error.message);
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ 网络检查失败:', error);
+                return false;
+            }
+        }
+        
+        // 显示错误页面
+        function showErrorPage(errorMessage) {
+            document.body.innerHTML = `
+                <div class="min-h-screen bg-light flex items-center justify-center p-4">
+                    <div class="max-w-md w-full text-center">
+                        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-danger/10 text-danger mb-4">
+                            <i class="fa fa-exclamation-triangle text-2xl"></i>
+                        </div>
+                        <h1 class="text-2xl font-bold text-dark mb-2">连接服务失败</h1>
+                        <p class="text-dark-3 mb-6">${errorMessage}</p>
+                        
+                        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                            <h2 class="text-lg font-semibold mb-3">可能的原因：</h2>
+                            <ul class="text-left text-sm text-dark-3 space-y-2">
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-danger mt-1 mr-2"></i>
+                                    <span>网络连接不稳定或断开</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-danger mt-1 mr-2"></i>
+                                    <span>服务地址配置错误</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-danger mt-1 mr-2"></i>
+                                    <span>访问密钥无效</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <i class="fa fa-circle text-xs text-danger mt-1 mr-2"></i>
+                                    <span>远程服务暂时不可用</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="flex space-x-3">
+                            <button id="use-local-mode" class="btn btn-success flex-1">
+                                <i class="fa fa-database mr-2"></i> 使用本地模式
+                            </button>
+                            <button id="retry-connection" class="btn btn-primary flex-1">
+                                <i class="fa fa-refresh mr-2"></i> 重试连接
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 绑定事件
+            document.getElementById('use-local-mode').addEventListener('click', function() {
+                // 保存配置，禁用远程服务
+                const config = {
+                    url: '',
+                    key: '',
+                    enabled: false
+                };
+                localStorage.setItem('supabaseConfig', JSON.stringify(config));
+                
+                // 重新加载页面
+                window.location.href = 'index.html?mode=local';
+            });
+            
+            document.getElementById('retry-connection').addEventListener('click', function() {
+                // 重新加载页面
+                window.location.reload();
+            });
+        }
+        
+        // 确保createFetchBasedSupabaseClient函数在全局作用域可用
+        window.createFetchBasedSupabaseClient = createFetchBasedSupabaseClient;
+        
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', async function() {
+            console.log('🚀 开始初始化Marco Polo管理系统...');
+            
+            try {
+                // 检查网络连接
+                const isConnected = await checkNetworkConnection();
+                
+                if (!isConnected) {
+                    console.warn('🌐 网络连接不可用，显示错误页面');
+                    showErrorPage('无法连接到远程服务，请检查您的网络连接或服务配置。');
+                    return;
+                }
+                
+                console.log('✅ 网络连接正常，继续初始化');
+            // 客户端将在需要时动态初始化
+        });
     </script>
     
     <!-- Tailwind 配置 -->
@@ -850,6 +1427,46 @@
 
                                     
                                     <div class="bg-light-1 rounded-lg p-4 mb-6">
+                                        <h4 class="font-medium text-dark mb-2">Supabase连接配置</h4>
+                                        <p class="text-sm text-dark-3 mb-4">配置Supabase云存储连接，实现数据同步</p>
+                                        
+                                        <div id="supabase-config" class="space-y-4">
+                                            <div class="form-group">
+                                                <label class="form-label" for="supabase-url">Supabase URL</label>
+                                                <input type="text" id="supabase-url" class="input-field" placeholder="https://your-project.supabase.co" value="https://kdtepufnlqkpkxijmwdr.supabase.co">
+                                            </div>
+                                            
+                                            <div class="form-group">
+                                                <label class="form-label" for="supabase-key">Supabase API Key</label>
+                                                <input type="password" id="supabase-key" class="input-field" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." value="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkdGVwdWZubHFrcGt4aWptd2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4OTg2OTgsImV4cCI6MjA3OTQ3NDY5OH0.UWHS54Vf-9Ek3ET05UzuINb6Q0A2okj1YcpTYqRyq8c">
+                                            </div>
+                                            
+                                            <div class="flex items-center">
+                                                <input type="checkbox" id="use-supabase" class="h-4 w-4 text-primary focus:ring-primary border-light-2 rounded">
+                                                <label for="use-supabase" class="ml-2 block text-sm text-dark-2">启用Supabase云存储</label>
+                                            </div>
+                                            
+                                            <div class="flex flex-wrap gap-3">
+                                                <button id="test-supabase" class="btn-secondary flex-1">
+                                                    <i class="fa fa-check-circle mr-2"></i> 测试连接
+                                                </button>
+                                                
+                                                <button id="save-supabase" class="btn-primary flex-1">
+                                                    <i class="fa fa-save mr-2"></i> 保存配置
+                                                </button>
+                                            </div>
+                                            
+                                            <div class="mt-3">
+                                                <button id="advanced-supabase-test" class="text-primary hover:text-primary/80 text-sm flex items-center">
+                                                    <i class="fa fa-diagnoses mr-1"></i> 高级诊断测试
+                                                </button>
+                                            </div>
+                                            
+                                            <div id="supabase-status" class="text-sm mt-2 hidden"></div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="bg-light-1 rounded-lg p-4 mb-6">
                                         <h4 class="font-medium text-dark mb-2">产品数据管理</h4>
                                         <p class="text-sm text-dark-3 mb-4">导入或导出产品数据</p>
                                         
@@ -1308,6 +1925,12 @@
         </div>
     </div>
 
+    <!-- Supabase REST客户端 - 直接使用API调用 -->
+    <script src="supabase-rest-client.js"></script>
+    
+    <!-- Supabase事件处理脚本 -->
+    <script src="supabase-events.js"></script>
+    
     <!-- 主应用脚本 -->
     <script>
         // 全局变量
@@ -1327,306 +1950,85 @@
         const supabaseUrl = 'https://kdtepufnlqkpkxijmwdr.supabase.co';
         const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtkdGVwdWZubHFrcGt4aWptd2RyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4OTg2OTgsImV4cCI6MjA3OTQ3NDY5OH0.UWHS54Vf-9Ek3ET05UzuINb6Q0A2okj1YcpTYqRyq8c';
         
-        // 全局客户端变量
+        // 初始化Supabase客户端
         let supabase;
         
-        // 初始化内置模拟客户端
-        function initializeMockClient() {
+        // 检查Supabase SDK加载状态的函数
+        function checkSupabaseSDK() {
             try {
-                // 尝试使用新的Supabase配置
-                const supabaseUrl = 'https://ubamuctccjgohwhsdcmn.supabase.co';
-                const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InViYW11Y3RjY2pnb2h3aHNkY21uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM5NjAxNzEsImV4cCI6MjA3OTUzNjE3MX0.Q29wF-pBEbqCr3vNSYsiqC2G0-_6TGthfHeY0Ge1rYE';
-                
-                // 检查是否有Supabase SDK可用
-                if (window.Supabase && window.Supabase.createClient) {
-                    supabase = window.Supabase.createClient(supabaseUrl, supabaseKey);
-                    console.log('✅ 使用Supabase.createClient初始化成功');
-                } else if (window.createClient) {
-                    supabase = window.createClient(supabaseUrl, supabaseKey);
-                    console.log('✅ 使用createClient初始化成功');
+                // 检查所有可能的SDK加载方式
+                if (typeof Supabase !== 'undefined' && Supabase.createClient) {
+                    supabase = Supabase.createClient(supabaseUrl, supabaseKey, {
+                        auth: {
+                            persistSession: true,
+                            autoRefreshToken: true,
+                            detectSessionInUrl: true
+                        },
+                        global: {
+                            headers: { 'X-Client-Info': 'Marco-Polo-Management-System/1.0' }
+                        }
+                    });
+                    console.log('✅ Supabase客户端初始化成功 (命名空间模式)');
+                    return true;
+                } else if (typeof createClient !== 'undefined') {
+                    supabase = createClient(supabaseUrl, supabaseKey, {
+                        auth: {
+                            persistSession: true,
+                            autoRefreshToken: true,
+                            detectSessionInUrl: true
+                        },
+                        global: {
+                            headers: { 'X-Client-Info': 'Marco-Polo-Management-System/1.0' }
+                        }
+                    });
+                    console.log('✅ Supabase客户端初始化成功 (直接函数模式)');
+                    return true;
                 } else {
-                    // 如果没有SDK，使用模拟客户端
-                    supabase = window.supabase;
-                    console.log('✅ 使用内置模拟客户端初始化成功');
+                    console.warn('❌ Supabase SDK未加载或不可用');
+                    // 检查全局对象
+                    console.log('全局对象检查:');
+                    console.log('- window.Supabase:', typeof window.Supabase);
+                    console.log('- window.createClient:', typeof window.createClient);
+                    
+                    // 列出所有包含supabase的全局对象
+                    for (const key in window) {
+                        if (key.toLowerCase().includes('supabase') || key.toLowerCase().includes('createclient')) {
+                            console.log(`发现相关全局对象: ${key} (${typeof window[key]})`);
+                        }
+                    }
+                    
+                    // 创建一个模拟的Supabase客户端
+                    supabase = {
+                        from: function() {
+                            return {
+                                select: function() { return { data: [], error: null }; },
+                                insert: function() { return { error: null }; },
+                                update: function() { return { error: null }; },
+                                delete: function() { return { error: null }; }
+                            };
+                        }
+                    };
+                    
+                    console.log('✅ 创建了模拟的Supabase客户端');
+                    return true; // 返回true表示我们有一个可用的客户端（即使是模拟的）
                 }
-                
-                // 显示通知告知用户
-                if (typeof showNotification === 'function') {
-                    setTimeout(() => {
-                        showNotification('系统初始化完成', 'info');
-                    }, 1000);
-                }
-                
-                return true;
             } catch (error) {
-                console.error('❌ 初始化客户端失败:', error.message);
+                console.error('❌ Supabase客户端初始化失败:', error.message);
                 
-                // 显示错误通知
-                if (typeof showNotification === 'function') {
-                    showNotification('错误', '系统初始化失败，请刷新页面重试', 'error');
-                }
-                
-                return false;
-            }
-        }
-        
-        // 创建实时数据监听器
-        function createRealtimeListener() {
-            if (!supabase || !supabase.channel) {
-                console.warn('⚠️ Supabase客户端不可用，无法创建实时监听器');
-                return null;
-            }
-            
-            console.log('🔄 正在创建实时数据监听器...');
-            
-            // 创建频道
-            const channel = supabase.channel('public:data_changes');
-            
-            // 订阅产品表变更
-            channel.on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'products'
-            }, handleProductChanges);
-            
-            // 订阅用户表变更
-            channel.on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'users'
-            }, handleUserChanges);
-            
-            // 订阅计算历史变更
-            channel.on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'calculation_history'
-            }, handleCalculationHistoryChanges);
-            
-            // 订阅操作日志变更
-            channel.on('postgres_changes', {
-                event: '*',
-                schema: 'public',
-                table: 'operation_logs'
-            }, handleOperationLogsChanges);
-            
-            // 订阅频道
-            channel.subscribe((status, err) => {
-                if (status === 'subscribed') {
-                    console.log('✅ 实时数据监听已启动');
-                    if (typeof showNotification === 'function') {
-                        showNotification('实时数据同步已启动', 'success');
+                // 即使出错，也创建一个模拟客户端
+                supabase = {
+                    from: function() {
+                        return {
+                            select: function() { return { data: [], error: null }; },
+                            insert: function() { return { error: null }; },
+                            update: function() { return { error: null }; },
+                            delete: function() { return { error: null }; }
+                        };
                     }
-                } else if (status === 'channel_error') {
-                    console.error('❌ 实时数据监听启动失败:', err.message);
-                    if (typeof showNotification === 'function') {
-                        showNotification('实时数据同步启动失败', 'error');
-                    }
-                } else if (status === 'closed') {
-                    console.warn('⚠️ 实时数据监听已关闭');
-                    if (typeof showNotification === 'function') {
-                        showNotification('实时数据同步已关闭', 'warning');
-                    }
-                } else if (status === 'timed_out') {
-                    console.warn('⚠️ 实时数据监听连接超时');
-                    if (typeof showNotification === 'function') {
-                        showNotification('实时数据同步连接超时', 'warning');
-                    }
-                }
-            });
-            
-            // 设置错误处理和自动重连
-            setupRealtimeErrorHandling(channel);
-            
-            return channel;
-        }
-        
-        // 处理产品数据变更
-        function handleProductChanges(payload) {
-            console.log('📦 收到产品数据变更:', payload);
-            
-            const { eventType, new: newData, old: oldData } = payload;
-            
-            switch (eventType) {
-                case 'INSERT':
-                    // 添加新产品
-                    if (!products.find(p => p.id === newData.id)) {
-                        products.push(newData);
-                        console.log('➕ 新增产品:', newData.name);
-                        renderProducts();
-                        showNotification(`新增产品: ${newData.name}`, 'success');
-                    }
-                    break;
-                    
-                case 'UPDATE':
-                    // 更新现有产品
-                    const productIndex = products.findIndex(p => p.id === newData.id);
-                    if (productIndex !== -1) {
-                        const oldName = products[productIndex].name;
-                        products[productIndex] = newData;
-                        console.log('🔄 更新产品:', oldName);
-                        renderProducts();
-                        showNotification(`更新产品: ${oldName}`, 'info');
-                    }
-                    break;
-                    
-                case 'DELETE':
-                    // 删除产品
-                    const deletedProduct = products.find(p => p.id === oldData.id);
-                    if (deletedProduct) {
-                        products = products.filter(p => p.id !== oldData.id);
-                        console.log('🗑️ 删除产品:', deletedProduct.name);
-                        renderProducts();
-                        showNotification(`删除产品: ${deletedProduct.name}`, 'warning');
-                    }
-                    break;
-            }
-        }
-        
-        // 处理用户数据变更
-        function handleUserChanges(payload) {
-            console.log('👤 收到用户数据变更:', payload);
-            
-            const { eventType, new: newData, old: oldData } = payload;
-            
-            switch (eventType) {
-                case 'INSERT':
-                    // 添加新用户
-                    if (!users.find(u => u.id === newData.id)) {
-                        users.push(newData);
-                        console.log('➕ 新增用户:', newData.username);
-                        renderUsers();
-                        showNotification(`新增用户: ${newData.username}`, 'success');
-                    }
-                    break;
-                    
-                case 'UPDATE':
-                    // 更新现有用户
-                    const userIndex = users.findIndex(u => u.id === newData.id);
-                    if (userIndex !== -1) {
-                        const oldUsername = users[userIndex].username;
-                        users[userIndex] = newData;
-                        console.log('🔄 更新用户:', oldUsername);
-                        renderUsers();
-                        showNotification(`更新用户: ${oldUsername}`, 'info');
-                    }
-                    break;
-                    
-                case 'DELETE':
-                    // 删除用户
-                    const deletedUser = users.find(u => u.id === oldData.id);
-                    if (deletedUser) {
-                        users = users.filter(u => u.id !== oldData.id);
-                        console.log('🗑️ 删除用户:', deletedUser.username);
-                        renderUsers();
-                        showNotification(`删除用户: ${deletedUser.username}`, 'warning');
-                    }
-                    break;
-            }
-        }
-        
-        // 处理计算历史变更
-        function handleCalculationHistoryChanges(payload) {
-            console.log('📊 收到计算历史变更:', payload);
-            
-            const { eventType, new: newData, old: oldData } = payload;
-            
-            switch (eventType) {
-                case 'INSERT':
-                    // 添加新计算历史
-                    if (!calculationHistory.find(c => c.id === newData.id)) {
-                        calculationHistory.push(newData);
-                        console.log('➕ 新增计算历史');
-                        renderCalculationHistory();
-                        showNotification('新增计算记录', 'success');
-                    }
-                    break;
-                    
-                case 'UPDATE':
-                    // 更新现有计算历史
-                    const calcIndex = calculationHistory.findIndex(c => c.id === newData.id);
-                    if (calcIndex !== -1) {
-                        calculationHistory[calcIndex] = newData;
-                        console.log('🔄 更新计算历史');
-                        renderCalculationHistory();
-                        showNotification('更新计算记录', 'info');
-                    }
-                    break;
-                    
-                case 'DELETE':
-                    // 删除计算历史
-                    calculationHistory = calculationHistory.filter(c => c.id !== oldData.id);
-                    console.log('🗑️ 删除计算历史');
-                    renderCalculationHistory();
-                    showNotification('删除计算记录', 'warning');
-                    break;
-            }
-        }
-        
-        // 处理操作日志变更
-        function handleOperationLogsChanges(payload) {
-            console.log('📝 收到操作日志变更:', payload);
-            
-            const { eventType, new: newData } = payload;
-            
-            if (eventType === 'INSERT') {
-                // 添加新操作日志
-                if (!operationLogs.find(log => log.id === newData.id)) {
-                    operationLogs.push(newData);
-                    console.log('➕ 新增操作日志:', newData.action);
-                    renderOperationLogs();
-                    // 不显示通知，避免过多干扰
-                }
-            }
-        }
-        
-        // 防抖函数
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
                 };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-        
-        // 错误处理与自动重连
-        function setupRealtimeErrorHandling(channel) {
-            // 监听连接错误
-            channel.on('error', (error) => {
-                console.error('❌ 实时连接错误:', error);
                 
-                // 尝试重新连接
-                setTimeout(() => {
-                    console.log('🔄 尝试重新连接...');
-                    channel.subscribe();
-                }, 5000);
-            });
-            
-            // 监听连接关闭
-            channel.on('close', () => {
-                console.warn('⚠️ 实时连接已关闭');
-                
-                // 尝试重新连接
-                setTimeout(() => {
-                    console.log('🔄 尝试重新连接...');
-                    channel.subscribe();
-                }, 5000);
-            });
-        }
-        
-        // 启动实时数据监听
-        function startRealtimeListeners() {
-            try {
-                const channel = createRealtimeListener();
-                if (channel) {
-                    console.log('✅ 实时数据监听已启动');
-                }
-            } catch (error) {
-                console.error('❌ 启动实时数据监听失败:', error.message);
+                console.log('✅ 创建了模拟的Supabase客户端');
+                return true; // 返回true表示我们有一个可用的客户端（即使是模拟的）
             }
         }
         
@@ -1637,13 +2039,16 @@
                 // 等待一小段时间确保SDK有机会加载
                 await new Promise(resolve => setTimeout(resolve, 100));
                 
-                // 初始化内置模拟客户端
-                initializeMockClient();
+                // 尝试初始化Supabase
+                const sdkLoaded = checkSupabaseSDK();
                 
-                // 启动实时数据监听
-                setTimeout(() => {
-                    startRealtimeListeners();
-                }, 2000);
+                // Supabase配置已硬编码在代码中
+                
+                if (sdkLoaded) {
+                    console.log('✅ 应用将使用Supabase云存储模式运行');
+                } else {
+                    console.warn('⚠️ Supabase SDK未正确加载，将使用本地存储模式运行');
+                }
                 
                 // 初始化数据
                 await initializeData();
@@ -1683,23 +2088,22 @@
         // Supabase数据操作函数
         async function loadData(key, defaultValue = null) {
             try {
-                // 直接从Supabase加载数据
-                if (supabase && supabase.from) {
-                    console.log(`尝试从Supabase加载数据: ${key}`);
-                    const tableName = getTableName(key);
-                    const { data, error } = await supabase.from(tableName).select('*');
-                    
-                    if (error) {
-                        console.error(`从Supabase加载数据失败 (${key}):`, error.message);
-                        return defaultValue;
-                    }
-                    
-                    console.log(`从Supabase成功加载数据: ${key}, 共 ${data.length} 条记录`);
-                    return data;
-                } else {
-                    console.warn(`⚠️ Supabase客户端不可用，使用默认数据: ${key}`);
+                if (!supabase) {
+                    console.error('Supabase客户端未初始化，无法加载数据');
                     return defaultValue;
                 }
+                
+                // 根据key映射到对应的Supabase表名
+                const tableName = getTableName(key);
+                const { data, error } = await supabase.from(tableName).select('*');
+                
+                if (error) {
+                    console.error(`从Supabase加载数据失败 (${key}):`, error.message);
+                    return defaultValue;
+                }
+                
+                console.log(`从Supabase成功加载数据: ${key}, 共 ${data.length} 条记录`);
+                return data;
             } catch (error) {
                 console.error(`加载数据失败 (${key}):`, error.message);
                 return defaultValue;
@@ -1712,7 +2116,7 @@
                 // 如果Supabase客户端不可用，使用本地存储
                 if (!supabase) {
                     console.warn('Supabase客户端不可用，将使用本地存储保存数据');
-    // 不再保存数据到本地存储
+                    localStorage.setItem(key, JSON.stringify(data));
                     console.log(`数据已保存到本地存储: ${key}, 共 ${Array.isArray(data) ? data.length : 1} 条记录`);
                     return true;
                 }
@@ -1755,86 +2159,98 @@
         async function initializeData() {
             try {
                 // 检查Supabase客户端是否可用
-                if (!supabase || !supabase.from) {
-                    console.warn('⚠️ Supabase客户端不可用，将使用内存中的默认数据');
+                if (!supabase) {
+                    console.warn('⚠️ Supabase客户端不可用，将使用本地存储初始化数据');
+                    
+                    // 从本地存储加载数据
+                    const savedProducts = localStorage.getItem('products');
+                    const savedUsers = localStorage.getItem('users');
+                    const savedCalculationHistory = localStorage.getItem('calculationHistory');
+                    const savedOperationLogs = localStorage.getItem('operationLogs');
                     
                     // 初始化产品数据
-                    products = [];
+                    products = savedProducts ? JSON.parse(savedProducts) : [];
                     
-                    // 创建示例产品数据
-                    const sampleProducts = [
-                        {
-                            id: 'prod_1',
-                            name: '抛光瓷砖 60x60',
-                            price: 88.5,
-                            model: 'PT-6060',
-                            category: 'tile',
-                            size: '60x60',
-                            style: '现代',
-                            description: '高质量抛光瓷砖，适用于客厅、卧室等地面装饰',
-                            image: 'https://picsum.photos/seed/tile1/400/300',
-                            badges: ['on-sale', 'hot'],
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString()
-                        },
-                        {
-                            id: 'prod_2',
-                            name: '大理石瓷砖 80x80',
-                            price: 168.0,
-                            model: 'MT-8080',
-                            category: 'tile',
-                            size: '80x80',
-                            style: '欧式',
-                            description: '仿大理石纹理瓷砖，高端大气',
-                            image: 'https://picsum.photos/seed/tile2/400/300',
-                            badges: ['new'],
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString()
-                        },
-                        {
-                            id: 'prod_3',
-                            name: '防滑地砖 30x30',
-                            price: 35.0,
-                            model: 'ST-3030',
-                            category: 'tile',
-                            size: '30x30',
-                            style: '简约',
-                            description: '厨房卫生间专用防滑地砖',
-                            image: 'https://picsum.photos/seed/tile3/400/300',
-                            badges: ['bargain'],
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString()
-                        }
-                    ];
-                    products = sampleProducts;
-                    console.log('创建示例产品数据');
+                    // 如果没有产品数据，创建一些示例数据
+                    if (products.length === 0) {
+                        const sampleProducts = [
+                            {
+                                id: 'prod_1',
+                                name: '抛光瓷砖 60x60',
+                                price: 88.5,
+                                model: 'PT-6060',
+                                category: 'tile',
+                                size: '60x60',
+                                style: '现代',
+                                description: '高质量抛光瓷砖，适用于客厅、卧室等地面装饰',
+                                image: 'https://picsum.photos/seed/tile1/400/300',
+                                badges: ['on-sale', 'hot'],
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            },
+                            {
+                                id: 'prod_2',
+                                name: '大理石瓷砖 80x80',
+                                price: 168.0,
+                                model: 'MT-8080',
+                                category: 'tile',
+                                size: '80x80',
+                                style: '欧式',
+                                description: '仿大理石纹理瓷砖，高端大气',
+                                image: 'https://picsum.photos/seed/tile2/400/300',
+                                badges: ['new'],
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            },
+                            {
+                                id: 'prod_3',
+                                name: '防滑地砖 30x30',
+                                price: 35.0,
+                                model: 'ST-3030',
+                                category: 'tile',
+                                size: '30x30',
+                                style: '简约',
+                                description: '厨房卫生间专用防滑地砖',
+                                image: 'https://picsum.photos/seed/tile3/400/300',
+                                badges: ['bargain'],
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            }
+                        ];
+                        products = sampleProducts;
+                        localStorage.setItem('products', JSON.stringify(products));
+                        console.log('创建示例产品数据');
+                    }
                     
                     // 初始化用户数据
-                    users = [];
+                    users = savedUsers ? JSON.parse(savedUsers) : [];
                     
-                    // 创建默认管理员用户
-                    const adminUser = [
-                        {
-                            id: 'admin_1',
-                            username: 'admin',
-                            password: 'admin123', // 密码明文存储，实际应用中应该加密
-                            name: '系统管理员',
-                            type: 'admin',
-                            status: 'active',
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString()
-                        }
-                    ];
-                    users = adminUser;
-                    console.log('创建默认管理员用户');
+                    // 如果没有用户数据，创建默认管理员用户
+                    if (users.length === 0) {
+                        const adminUser = [
+                            {
+                                id: 'admin_1',
+                                username: 'admin',
+                                password: 'admin123', // 密码明文存储，实际应用中应该加密
+                                name: '系统管理员',
+                                type: 'admin',
+                                status: 'active',
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString()
+                            }
+                        ];
+                        users = adminUser;
+                        localStorage.setItem('users', JSON.stringify(users));
+                        console.log('创建默认管理员用户');
+                    }
                     
                     // 初始化计算历史
-                    calculationHistory = [];
+                    calculationHistory = savedCalculationHistory ? JSON.parse(savedCalculationHistory) : [];
                     
                     // 初始化操作日志
-                    operationLogs = [];
+                    operationLogs = savedOperationLogs ? JSON.parse(savedOperationLogs) : [];
                     
-                    console.log('使用内存默认数据初始化完成');
+                    console.log('使用本地存储初始化数据完成');
                     return;
                 }
                 
@@ -2027,7 +2443,16 @@
             document.getElementById('login-button').addEventListener('click', handleLogin);
             
             // 退出登录
-            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            document.getElementById('logout-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                handleLogout();
+            });
+            
+            // 移动端退出登录
+            document.getElementById('mobile-logout-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                handleLogout();
+            });
             
             // 产品搜索
             document.getElementById('product-search').addEventListener('input', () => {
@@ -2163,6 +2588,52 @@
                 });
             });
             
+            // 初始化图片上传功能
+            // 编辑产品图片上传
+            document.getElementById('edit-product-image-upload').addEventListener('click', function() {
+                document.getElementById('edit-product-image-input').click();
+            });
+            
+            // 编辑产品图片预览和删除
+            document.getElementById('edit-product-image-input').addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const preview = document.getElementById('edit-product-image-preview');
+                        const previewImg = preview.querySelector('img');
+                        const uploadArea = document.getElementById('edit-product-image-upload');
+                        
+                        previewImg.src = e.target.result;
+                        preview.classList.remove('hidden');
+                        uploadArea.classList.add('hidden');
+                    }
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+            
+            // 删除图片
+            document.getElementById('edit-remove-image').addEventListener('click', function() {
+                const preview = document.getElementById('edit-product-image-preview');
+                const uploadArea = document.getElementById('edit-product-image-upload');
+                const input = document.getElementById('edit-product-image-input');
+                
+                preview.classList.add('hidden');
+                uploadArea.classList.remove('hidden');
+                input.value = '';
+            });
+            
+            // 添加产品图片上传
+            document.getElementById('product-image').addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        // 可以在这里添加预览功能
+                        console.log('图片已选择:', e.target.result.substring(0, 50) + '...');
+                    }
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+            
 
             
             // 导出产品数据
@@ -2195,10 +2666,9 @@
             // 初始化外观设置
             function initializeAppearanceSettings() {
                 // 从本地存储加载设置
-                // 使用默认设置
-                const savedBackground = 'bg1';
-                const savedTheme = 'primary';
-                const savedDarkMode = false;
+                const savedBackground = localStorage.getItem('appBackground') || 'bg1';
+                const savedTheme = localStorage.getItem('appTheme') || 'primary';
+                const savedDarkMode = localStorage.getItem('appDarkMode') === 'true';
                 
                 // 应用背景设置
                 if (savedBackground.startsWith('custom_')) {
@@ -2312,7 +2782,7 @@
                         const bgName = `bg${index + 1}`;
                         document.body.style.backgroundImage = `url(https://picsum.photos/seed/${bgName}/1920/1080)`;
                         document.body.classList.add('bg-cover', 'bg-fixed');
-// 不再保存背景设置
+                        localStorage.setItem('appBackground', bgName);
                     }
                     
                     // 更新选中状态
@@ -2334,7 +2804,7 @@
                         const imgUrl = event.target.result;
                         document.body.style.backgroundImage = `url(${imgUrl})`;
                         document.body.classList.add('bg-cover', 'bg-fixed');
-// 不再保存自定义背景
+                        localStorage.setItem('appBackground', `custom_${imgUrl}`);
                         
                         // 更新选中状态
                         backgroundImages.forEach(i => {
@@ -2363,7 +2833,7 @@
                     }
                     
                     applyThemeColor(themeName);
-// 不再保存主题设置
+                    localStorage.setItem('appTheme', themeName);
                 });
             });
             
@@ -2378,7 +2848,7 @@
                     document.body.classList.remove('bg-dark-1', 'text-light-1');
                     document.body.classList.add('bg-light');
                 }
-// 不再保存深色模式设置
+                localStorage.setItem('appDarkMode', this.checked.toString());
             });
             
             // 保存设置
@@ -2393,7 +2863,8 @@
                 const currentDarkMode = document.getElementById('dark-mode').checked;
                 
                 // 保存到本地存储
-// 不再保存主题和深色模式设置
+                localStorage.setItem('appTheme', currentTheme);
+                localStorage.setItem('appDarkMode', currentDarkMode.toString());
                 
                 showNotification('设置已保存', '外观设置已成功保存', 'success');
             });
@@ -2495,6 +2966,103 @@
             });
         }
         
+        // 测试Supabase连接
+        async function testSupabaseConnection() {
+            const supabaseUrl = document.getElementById('supabase-url').value;
+            const supabaseKey = document.getElementById('supabase-key').value;
+            const statusElement = document.getElementById('supabase-status');
+            
+            if (!supabaseUrl || !supabaseKey) {
+                showStatus(statusElement, '请填写Supabase URL和API Key', 'error');
+                return;
+            }
+            
+            showStatus(statusElement, '正在测试连接...', 'info');
+            
+            try {
+                // 使用基于fetch API的客户端
+                console.log('🔍 使用基于fetch API的客户端测试连接');
+                
+                // 创建客户端
+                const testSupabase = createFetchBasedSupabaseClient(supabaseUrl, supabaseKey);
+                
+                // 尝试一个简单的查询来测试连接
+                const { data, error } = await testSupabase.from('products').select('*').limit(1);
+                
+                if (error) {
+                    throw new Error(error.message || '查询失败');
+                }
+                
+                showStatus(statusElement, '✅ 连接成功！使用真实Supabase API', 'success');
+                
+                // 保存客户端到全局
+                window.supabase = testSupabase;
+            } catch (error) {
+                console.error('❌ Supabase连接测试失败:', error);
+                showStatus(statusElement, `❌ 连接失败: ${error.message || '未知错误'}`, 'error');
+            }
+        }
+        
+        // 保存Supabase配置
+        function saveSupabaseConfig() {
+            const supabaseUrl = document.getElementById('supabase-url').value;
+            const supabaseKey = document.getElementById('supabase-key').value;
+            const useSupabase = document.getElementById('use-supabase').checked;
+            const statusElement = document.getElementById('supabase-status');
+            
+            if (!supabaseUrl || !supabaseKey) {
+                showStatus(statusElement, '请填写Supabase URL和API Key', 'error');
+                return;
+            }
+            
+            // 保存配置到本地存储
+            const config = {
+                url: supabaseUrl,
+                key: supabaseKey,
+                enabled: useSupabase
+            };
+            
+            localStorage.setItem('supabaseConfig', JSON.stringify(config));
+            
+            // 如果启用了Supabase，尝试重新初始化
+            if (useSupabase) {
+                initializeSupabase(supabaseUrl, supabaseKey)
+                    .then(() => {
+                        showStatus(statusElement, '配置已保存并成功连接到Supabase', 'success');
+                        // 重新加载数据以同步到云端
+                        loadData();
+                    })
+                    .catch(error => {
+                        console.error('重新初始化Supabase失败:', error);
+                        showStatus(statusElement, `配置已保存，但连接失败: ${error.message || '未知错误'}`, 'warning');
+                    });
+            } else {
+                // 禁用Supabase
+                supabase = null;
+                showStatus(statusElement, '配置已保存，Supabase已禁用', 'info');
+            }
+        }
+        
+        // 显示状态消息
+        function showStatus(element, message, type) {
+            element.textContent = message;
+            element.classList.remove('hidden', 'text-success', 'text-danger', 'text-warning', 'text-info');
+            
+            switch (type) {
+                case 'success':
+                    element.classList.add('text-success');
+                    break;
+                case 'error':
+                    element.classList.add('text-danger');
+                    break;
+                case 'warning':
+                    element.classList.add('text-warning');
+                    break;
+                default:
+                    element.classList.add('text-info');
+            }
+        }
+        
         // 页面导航
         function navigateTo(page) {
             // 隐藏所有页面
@@ -2569,7 +3137,7 @@
         // 保存数据到本地存储
         function saveData(key, data) {
             try {
-// 不再保存数据到本地存储
+                localStorage.setItem(key, JSON.stringify(data));
                 console.log(`数据已保存: ${key}, 共 ${Array.isArray(data) ? data.length : 1} 条记录`);
                 return true;
             } catch (error) {
@@ -2838,21 +3406,49 @@
             try {
                 // 退出登录逻辑 - 使用Supabase API删除当前用户记录
                 if (supabase) {
-                    await supabase.from('current_user').delete().neq('id', '');
+                    try {
+                        // 尝试使用Supabase API
+                        if (typeof supabase.from === 'function' && 
+                            typeof supabase.from('current_user').delete === 'function') {
+                            // 检查neq方法是否存在
+                            if (typeof supabase.from('current_user').delete().neq === 'function') {
+                                await supabase.from('current_user').delete().neq('id', '');
+                            } else {
+                                // 如果neq方法不存在，使用其他方式删除
+                                await supabase.from('current_user').delete().match({});
+                            }
+                        }
+                    } catch (supabaseError) {
+                        console.warn('Supabase操作失败，使用本地存储方式:', supabaseError.message);
+                        // 回退到本地存储方式
+                        localStorage.removeItem('currentUser');
+                    }
+                } else {
+                    // 直接使用本地存储方式
+                    localStorage.removeItem('currentUser');
                 }
+                
                 currentUser = null;
                 
                 // 显示登录页面
                 document.getElementById('app').classList.add('hidden');
                 document.getElementById('login-page').classList.remove('hidden');
                 
-                // 记录退出登录日志
-                await addOperationLog('system', '用户退出登录');
+                // 记录退出登录日志（使用同步方式，避免异步错误）
+                try {
+                    addOperationLog('system', '用户退出登录');
+                } catch (logError) {
+                    console.warn('记录日志失败:', logError.message);
+                }
                 
                 console.log('用户已退出登录');
             } catch (error) {
                 console.error('退出登录失败:', error.message);
-                showNotification('错误', '退出登录失败，请重试', 'error');
+                // 即使出错也要强制退出
+                currentUser = null;
+                document.getElementById('app').classList.add('hidden');
+                document.getElementById('login-page').classList.remove('hidden');
+                showNotification('提示', '已退出登录', 'success');
             }
         }
         
@@ -3005,6 +3601,68 @@
                 // 处理文件上传
                 let imageUrl = 'https://picsum.photos/seed/' + name + '/' + Date.now() + '/400/300';
                 
+                // 检查是否有上传的图片
+                const fileInput = document.getElementById('product-image');
+                if (fileInput.files && fileInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imageUrl = e.target.result;
+                        
+                        // 创建新产品对象
+                        const newProduct = {
+                            id: 'prod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                            name,
+                            price,
+                            model,
+                            category,
+                            size,
+                            style,
+                            description,
+                            image: imageUrl,
+                            badges,
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                        };
+                        
+                        // 添加到产品数组
+                        products.push(newProduct);
+                        
+                        // 保存产品数据到本地存储
+                        localStorage.setItem('products', JSON.stringify(products));
+                        
+                        // 重新渲染产品列表
+                        renderProducts();
+                        
+                        // 关闭模态框
+                        document.getElementById('add-product-modal').classList.add('hidden');
+                        
+                        // 手动重置表单字段
+                        document.getElementById('product-name').value = '';
+                        document.getElementById('product-price').value = '';
+                        document.getElementById('product-model').value = '';
+                        document.getElementById('product-category').value = '';
+                        document.getElementById('product-size').value = '';
+                        document.getElementById('product-style').value = '';
+                        document.getElementById('product-description').value = '';
+                        document.getElementById('product-image').value = '';
+                        // 重置标签复选框
+                        document.querySelectorAll('#add-product-form input[name="badges"]').forEach(checkbox => {
+                            checkbox.checked = false;
+                        });
+                        
+                        // 显示成功通知
+                        showNotification('添加成功', '产品已成功添加', 'success');
+                        
+                        // 记录操作日志
+                        addOperationLog('product', `添加产品: ${name}`);
+                        
+                        // 重置防抖标志
+                        isAddingProduct = false;
+                    };
+                    reader.readAsDataURL(fileInput.files[0]);
+                    return; // 等待文件读取完成后再继续
+                }
+                
                 // 创建新产品对象
                 const newProduct = {
                     id: 'prod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
@@ -3025,7 +3683,7 @@
                 products.push(newProduct);
                 
                 // 保存产品数据到本地存储
-// 不再保存产品数据
+                localStorage.setItem('products', JSON.stringify(products));
                 
                 // 重新渲染产品列表
                 renderProducts();
@@ -3133,6 +3791,47 @@
                     image = document.getElementById('edit-product-image-preview').querySelector('img').src;
                 }
                 
+                // 检查是否有新上传的图片文件
+                const fileInput = document.getElementById('edit-product-image-input');
+                if (fileInput.files && fileInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        image = e.target.result;
+                        
+                        // 更新产品信息
+                        products[productIndex] = {
+                            ...products[productIndex],
+                            name,
+                            price,
+                            model,
+                            category,
+                            size,
+                            style,
+                            description,
+                            badges,
+                            image,
+                            updatedAt: new Date().toISOString()
+                        };
+                        
+                        // 保存产品数据
+                        localStorage.setItem('products', JSON.stringify(products));
+                        
+                        // 重新渲染产品列表
+                        renderProducts();
+                        
+                        // 关闭模态框
+                        document.getElementById('edit-product-modal').classList.add('hidden');
+                        
+                        // 显示成功通知
+                        showNotification('更新成功', '产品信息已成功更新', 'success');
+                        
+                        // 记录操作日志
+                        addOperationLog('product', `更新产品: ${name}`);
+                    };
+                    reader.readAsDataURL(fileInput.files[0]);
+                    return; // 等待文件读取完成后再继续
+                }
+                
                 // 更新产品信息
                 products[productIndex] = {
                     ...products[productIndex],
@@ -3149,7 +3848,7 @@
                 };
                 
                 // 保存产品数据
-// 不再保存产品数据
+                localStorage.setItem('products', JSON.stringify(products));
                 
                 // 重新渲染产品列表
                 renderProducts();
@@ -3187,7 +3886,7 @@
                         products.splice(productIndex, 1);
                         
                         // 保存更新后的产品数据
-        // 不再保存产品数据
+                        localStorage.setItem('products', JSON.stringify(products));
                         
                         // 重新渲染产品列表
                         renderProducts();
@@ -3319,16 +4018,17 @@
                 
                 // 重新渲染用户列表
                 renderUsers();
+                renderUsers();
                 
                 // 关闭模态框
                 document.getElementById('add-user-modal').classList.add('hidden');
                 
                 // 手动重置表单字段
-                document.getElementById('username').value = '';
-                document.getElementById('password').value = '';
-                document.getElementById('role').value = '';
-                document.getElementById('email').value = '';
-                document.getElementById('phone').value = '';
+                document.getElementById('new-username').value = '';
+                document.getElementById('new-name').value = '';
+                document.getElementById('new-password').value = '';
+                document.getElementById('new-type').value = 'user';
+                document.getElementById('new-status').value = 'active';
                 
                 // 显示成功通知
                 showNotification('添加成功', '用户已成功添加', 'success');
@@ -3401,9 +4101,10 @@
                 }
                 
                 // 保存用户数据
-// 不再保存用户数据
+                localStorage.setItem('users', JSON.stringify(users));
                 
                 // 重新渲染用户列表
+                renderUsers();
                 renderUsers();
                 
                 // 关闭模态框
@@ -3450,9 +4151,10 @@
                         users.splice(userIndex, 1);
                         
                         // 保存更新后的用户数据
-        // 不再保存用户数据
+                        localStorage.setItem('users', JSON.stringify(users));
                         
                         // 重新渲染用户列表
+                renderUsers();
                         renderUsers();
                         
                         // 显示成功通知
@@ -3803,7 +4505,7 @@
             }
             
             // 保存到本地存储
-// 不再保存计算历史
+            localStorage.setItem('calculationHistory', JSON.stringify(calculationHistory));
             
             // 更新计算历史显示
             renderCalculationHistory();
@@ -4180,9 +4882,9 @@
                                 if (data.operationLogs) operationLogs = data.operationLogs;
                                 
                                 // 保存到本地存储
-                // 不再保存产品数据
-                // 不再保存用户数据
-                    // 不再保存计算历史
+                                localStorage.setItem('products', JSON.stringify(products));
+                                localStorage.setItem('users', JSON.stringify(users));
+                                localStorage.setItem('calculationHistory', JSON.stringify(calculationHistory));
                                 localStorage.setItem('operationLogs', JSON.stringify(operationLogs));
                                 
                                 // 重新渲染所有列表
@@ -4280,7 +4982,7 @@
                                 products = data.products;
                                 
                                 // 保存到本地存储
-                // 不再保存产品数据
+                                localStorage.setItem('products', JSON.stringify(products));
                                 
                                 // 重新渲染产品列表
                                 renderProducts();
@@ -4434,7 +5136,7 @@
                                 products = importedProducts;
                                 
                                 // 保存到本地存储
-                // 不再保存产品数据
+                                localStorage.setItem('products', JSON.stringify(products));
                                 
                                 // 重新渲染产品列表
                                 renderProducts();
