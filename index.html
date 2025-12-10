@@ -32,7 +32,7 @@
             console.log(`🔒 应用用户权限: ${user?.username || '未登录'} (${isAdmin ? '管理员' : '普通用户'})`);
             
             // 导航菜单权限控制
-            const adminOnlyPages = ['users-page', 'logs-page', 'settings-page'];
+            const adminOnlyPages = ['users-page', 'settings-page'];
             adminOnlyPages.forEach(pageId => {
                 // 桌面导航
                 const desktopNavItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
@@ -979,10 +979,11 @@
                             <i class="fa fa-users w-5 text-center mr-2"></i>
                             <span>用户管理</span>
                         </a>
-                        <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="logs-page">
-                            <i class="fa fa-history w-5 text-center mr-2"></i>
-                            <span>操作日志</span>
+                        <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="inventory-page">
+                            <i class="fa fa-cubes w-5 text-center mr-2"></i>
+                            <span>库存管理</span>
                         </a>
+
                         <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="settings-page">
                             <i class="fa fa-cog w-5 text-center mr-2"></i>
                             <span>系统设置</span>
@@ -1020,10 +1021,11 @@
                                 <i class="fa fa-users w-5 text-center mr-2"></i>
                                 <span>用户管理</span>
                             </a>
-                            <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="logs-page">
-                                <i class="fa fa-history w-5 text-center mr-2"></i>
-                                <span>操作日志</span>
+                            <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="inventory-page">
+                                <i class="fa fa-cubes w-5 text-center mr-2"></i>
+                                <span>库存管理</span>
                             </a>
+
                             <a href="#" class="nav-item flex items-center px-4 py-2 rounded-md text-dark-1 hover:bg-light-1" data-page="settings-page">
                                 <i class="fa fa-cog w-5 text-center mr-2"></i>
                                 <span>系统设置</span>
@@ -1246,6 +1248,47 @@
 
                     </div>
                     
+                    <!-- 库存管理页面 -->
+                    <div id="inventory-page" class="page-transition hidden">
+                        <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
+                            <div>
+                                <h2 class="text-2xl font-bold text-dark">库存管理</h2>
+                                <p class="text-dark-3 mt-1">管理产品库存</p>
+                            </div>
+                            
+                            <div>
+                                <button id="add-inventory-btn" class="btn-primary">
+                                    <i class="fa fa-plus mr-2"></i> 添加库存
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 库存列表 -->
+                        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y divide-light-2">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">型号</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">色号</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">数量</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">更新时间</th>
+                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="inventory-list" class="bg-white divide-y divide-light-2">
+                                        <!-- 库存列表将通过JS动态生成 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <div id="no-inventory" class="text-center py-12 text-dark-3">
+                                <i class="fa fa-cubes text-4xl mb-3"></i>
+                                <p>暂无库存记录</p>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- 用户管理页面 -->
                     <div id="users-page" class="page-transition hidden">
                         <div class="mb-6 flex flex-wrap justify-between items-center gap-4">
@@ -1289,55 +1332,7 @@
                     </div>
                     
                     <!-- 操作日志页面 -->
-                    <div id="logs-page" class="page-transition hidden">
-                        <div class="mb-6">
-                            <h2 class="text-2xl font-bold text-dark">操作日志</h2>
-                            <p class="text-dark-3 mt-1">查看系统操作记录</p>
-                        </div>
-                        
-                        <!-- 日志筛选 -->
-                        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
-                            <div class="flex flex-wrap gap-3">
-                                <div class="relative">
-                                    <select id="log-filter" class="input-field appearance-none bg-transparent pr-8" style="
-                                        -webkit-appearance: none;
-                                        -moz-appearance: none;
-                                        appearance: none;
-                                        background-image: none;
-                                        cursor: default;
-                                    ">
-                                        <option value="all">全部操作</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 日志列表 -->
-                        <div class="bg-white rounded-lg shadow-sm overflow-hidden relative">
-                            <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-light-2">
-                                    <thead>
-                                        <tr>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">操作类型</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">操作内容</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">操作人</th>
-                                            <th class="px-6 py-3 text-left text-xs font-medium text-dark-3 uppercase tracking-wider">操作时间</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="logs-list" class="bg-white divide-y divide-light-2">
-                                        <!-- 日志列表将通过JS动态生成 -->
-                                    </tbody>
-                                </table>
-                            </div>
-                            
-                            <div id="no-logs" class="text-center py-12 text-dark-3">
-                                <i class="fa fa-history text-4xl mb-3"></i>
-                                <p>暂无操作日志</p>
-                            </div>
-                            
 
-                        </div>
-                    </div>
                     
                     <!-- 系统设置页面 -->
                     <div id="settings-page" class="page-transition hidden">
@@ -1483,8 +1478,9 @@
                                     
 
                                     
-                                    <div class="bg-light-1 rounded-lg p-4 mb-6">
-                                        <h4 class="font-medium text-dark mb-2">操作日志管理</h4>
+                                    <div class="bg-light-1 rounded-lg p-4 mb-6 hidden">
+                                        <h4 class="font-medium text-dark mb-2">
+</h4>
                                         <p class="text-sm text-dark-3 mb-4">管理系统操作日志</p>
                                         
                                         <div class="form-group mb-4">
@@ -1863,6 +1859,40 @@
         </div>
     </div>
     
+    <!-- 添加库存模态框 -->
+    <div id="add-inventory-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="text-xl font-bold text-dark">添加库存</h3>
+                <button id="close-inventory-modal" class="text-dark-3 hover:text-dark transition-colors">
+                    <span class="text-xl">×</span>
+                </button>
+            </div>
+            
+            <div id="add-inventory-form" class="space-y-4">
+                <div class="form-group">
+                    <label class="form-label" for="inventory-model">型号 <span class="text-danger">*</span></label>
+                    <input type="text" id="inventory-model" name="model" class="input-field" placeholder="请输入型号">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="inventory-color">色号 <span class="text-danger">*</span></label>
+                    <input type="text" id="inventory-color" name="color" class="input-field" placeholder="请输入色号">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="inventory-quantity">数量 <span class="text-danger">*</span></label>
+                    <input type="number" id="inventory-quantity" name="quantity" class="input-field" placeholder="请输入数量" min="0">
+                </div>
+                
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button type="button" id="cancel-add-inventory" class="btn-secondary">取消</button>
+                    <button type="button" id="submit-add-inventory" class="btn-primary">添加库存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- 确认对话框 -->
     <div id="confirm-dialog" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-sm">
@@ -1896,7 +1926,8 @@
         let products = [];
         let calculationHistory = [];
         let users = [];
-        let operationLogs = [];
+        let inventory = [];
+
         let currentPage = 'products-page';
         let currentCalculator = 'wall-calculator';
         let currentSettings = 'appearance-settings';
@@ -2109,8 +2140,8 @@
             const tableMap = {
                 'products': 'products',
                 'users': 'users',
-                'calculationHistory': 'calculation_history',
-                'operationLogs': 'operation_logs',
+                'inventory': 'inventory',
+                'settings': 'settings',
                 'currentUser': 'current_user'
             };
             return tableMap[key] || key;
@@ -2127,7 +2158,7 @@
                     const savedProducts = localStorage.getItem('products');
                     const savedUsers = localStorage.getItem('users');
                     const savedCalculationHistory = localStorage.getItem('calculationHistory');
-                    const savedOperationLogs = localStorage.getItem('operationLogs');
+
                     
                     // 初始化产品数据
                     products = savedProducts ? JSON.parse(savedProducts) : [];
@@ -2208,8 +2239,7 @@
                     // 初始化计算历史
                     calculationHistory = savedCalculationHistory ? JSON.parse(savedCalculationHistory) : [];
                     
-                    // 初始化操作日志
-                    operationLogs = savedOperationLogs ? JSON.parse(savedOperationLogs) : [];
+
                     
                     console.log('使用本地存储初始化数据完成');
                     return;
@@ -2294,58 +2324,12 @@
                 }
                 
                 // 初始化计算历史
-                calculationHistory = await loadData('calculationHistory', []);
+                // 加载库存数据
+                inventory = await loadData('inventory', []);
+                // 加载系统设置
+                settings = await loadData('settings', {});
                 
-                // 初始化操作日志
-                operationLogs = await loadData('operationLogs', []);
-                
-                // 如果没有日志数据，添加一些示例日志
-                if (operationLogs.length === 0) {
-                    const now = new Date();
-                    const yesterday = new Date(now);
-                    yesterday.setDate(yesterday.getDate() - 1);
-                    
-                    const sampleLogs = [
-                        {
-                            id: generateId(),
-                            type: 'calculation',
-                            content: '使用墙面算砖计算器计算了100平方米墙面所需砖块数量',
-                            user: '张三',
-                            timestamp: now.toISOString()
-                        },
-                        {
-                            id: generateId(),
-                            type: 'product',
-                            content: '添加了新砖块产品：标准红砖 240x115x53mm',
-                            user: '李四',
-                            timestamp: now.toISOString()
-                        },
-                        {
-                            id: generateId(),
-                            type: 'user',
-                            content: '用户 王五 登录系统',
-                            user: '系统',
-                            timestamp: now.toISOString()
-                        },
-                        {
-                            id: generateId(),
-                            type: 'system',
-                            content: '系统自动备份完成',
-                            user: '系统',
-                            timestamp: yesterday.toISOString()
-                        },
-                        {
-                            id: generateId(),
-                            type: 'calculation',
-                            content: '使用墙面算砖计算器计算了50平方米墙面所需砖块数量',
-                            user: '赵六',
-                            timestamp: yesterday.toISOString()
-                        }
-                    ];
-                    
-                    operationLogs = sampleLogs;
-                    await saveData('operationLogs', operationLogs);
-                }
+
                 
                 console.log('数据初始化完成');
             } catch (error) {
@@ -2374,13 +2358,165 @@
             // 渲染用户列表
             renderUsers();
             
+            // 渲染库存列表
+            renderInventoryList();
+            
             // 渲染计算历史
             renderCalculationHistory();
-            
-            // 渲染操作日志
-            renderOperationLogs();
         }
-        
+
+        // 渲染库存列表
+        function renderInventoryList() {
+            const inventoryList = document.getElementById('inventory-list');
+            const noInventory = document.getElementById('no-inventory');
+    
+            if (!inventoryList || !noInventory) return;
+    
+            // 从本地存储加载库存数据
+            const savedInventory = localStorage.getItem('inventory');
+            if (savedInventory) {
+                inventory = JSON.parse(savedInventory);
+            } else {
+                inventory = [];
+            }
+    
+            // 清空列表
+            inventoryList.innerHTML = '';
+    
+            // 检查是否有库存记录
+            if (inventory.length === 0) {
+                inventoryList.classList.add('hidden');
+                noInventory.classList.remove('hidden');
+                return;
+            }
+    
+            // 显示列表，隐藏无数据提示
+            inventoryList.classList.remove('hidden');
+            noInventory.classList.add('hidden');
+    
+            // 渲染库存记录
+            inventory.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-dark">${item.model}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-dark">${item.color}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-dark">${item.quantity}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-dark-3">${new Date(item.updated_at).toLocaleString()}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                        <button class="text-primary hover:text-primary/80 mr-3 inventory-edit-btn" data-id="${item.id}">
+                            <i class="fa fa-pencil"></i>
+                        </button>
+                        <button class="text-danger hover:text-danger/80 inventory-delete-btn" data-id="${item.id}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                inventoryList.appendChild(row);
+            });
+    
+            // 绑定编辑和删除按钮事件
+            document.querySelectorAll('.inventory-edit-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-id');
+                    editInventory(id);
+                });
+            });
+    
+            document.querySelectorAll('.inventory-delete-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-id');
+                    deleteInventory(id);
+                });
+            });
+        }
+
+        // 编辑库存
+        function editInventory(id) {
+            const item = inventory.find(i => i.id === id);
+            if (!item) return;
+    
+            // 填充表单
+            document.getElementById('inventory-model').value = item.model;
+            document.getElementById('inventory-color').value = item.color;
+            document.getElementById('inventory-quantity').value = item.quantity;
+    
+            // 打开模态框
+            document.getElementById('add-inventory-modal').classList.remove('hidden');
+    
+            // 更改按钮文本
+            const submitBtn = document.getElementById('submit-add-inventory');
+            submitBtn.textContent = '更新库存';
+            submitBtn.onclick = async () => {
+                const model = document.getElementById('inventory-model').value.trim();
+                const color = document.getElementById('inventory-color').value.trim();
+                const quantity = parseInt(document.getElementById('inventory-quantity').value);
+    
+                // 验证输入
+                if (!model || !color || isNaN(quantity) || quantity < 0) {
+                    showNotification('输入错误', '请填写所有必填字段并确保数量为非负数', 'error');
+                    return;
+                }
+    
+                // 更新库存记录
+                const index = inventory.findIndex(i => i.id === id);
+                if (index !== -1) {
+                    inventory[index] = {
+                        ...item,
+                        model,
+                        color,
+                        quantity,
+                        updated_at: new Date().toISOString()
+                    };
+    
+                    // 保存到本地存储
+                    localStorage.setItem('inventory', JSON.stringify(inventory));
+    
+                    // 刷新库存列表
+                    renderInventoryList();
+    
+                    // 关闭模态框
+                    document.getElementById('add-inventory-modal').classList.add('hidden');
+                    document.getElementById('add-inventory-form').reset();
+    
+                    // 恢复按钮文本
+                    submitBtn.textContent = '添加库存';
+                    submitBtn.onclick = null;
+    
+                    // 重新绑定事件
+                    submitBtn.addEventListener('click', arguments.callee);
+    
+                    // 显示成功通知
+                    showNotification('更新成功', '库存记录已更新', 'success');
+                }
+            };
+        }
+
+        // 删除库存
+        function deleteInventory(id) {
+            if (confirm('您确定要删除这条库存记录吗？')) {
+                const index = inventory.findIndex(i => i.id === id);
+                if (index !== -1) {
+                    inventory.splice(index, 1);
+    
+                    // 保存到本地存储
+                    localStorage.setItem('inventory', JSON.stringify(inventory));
+    
+                    // 刷新库存列表
+                    renderInventoryList();
+    
+                    // 显示成功通知
+                    showNotification('删除成功', '库存记录已删除', 'success');
+                }
+            }
+        }        
         // 绑定事件监听器
         function bindEventListeners() {
             // 侧边栏切换
@@ -2599,12 +2735,76 @@
             // 提交编辑用户
             document.getElementById('submit-edit-user').addEventListener('click', handleEditUser);
             
-            // 日志筛选 - 由于只有一个选项，简化了事件监听
-            document.getElementById('log-filter').addEventListener('change', () => {
-                // 始终使用"全部操作"筛选
-                currentLogFilter = 'all';
-                renderOperationLogs();
-            });
+
+            
+            // 库存管理相关事件
+            const addInventoryBtn = document.getElementById('add-inventory-btn');
+            const addInventoryModal = document.getElementById('add-inventory-modal');
+            const closeInventoryModal = document.getElementById('close-inventory-modal');
+            const cancelAddInventory = document.getElementById('cancel-add-inventory');
+            const submitAddInventory = document.getElementById('submit-add-inventory');
+            const addInventoryForm = document.getElementById('add-inventory-form');
+    
+            // 打开添加库存模态框
+            if (addInventoryBtn) {
+                addInventoryBtn.addEventListener('click', () => {
+                    addInventoryModal.classList.remove('hidden');
+                });
+            }
+    
+            // 关闭添加库存模态框
+            if (closeInventoryModal) {
+                closeInventoryModal.addEventListener('click', () => {
+                    addInventoryModal.classList.add('hidden');
+                    addInventoryForm.reset();
+                });
+            }
+    
+            // 取消添加库存
+            if (cancelAddInventory) {
+                cancelAddInventory.addEventListener('click', () => {
+                    addInventoryModal.classList.add('hidden');
+                    addInventoryForm.reset();
+                });
+            }
+    
+            // 提交添加库存
+            if (submitAddInventory) {
+                submitAddInventory.addEventListener('click', async () => {
+                    const model = document.getElementById('inventory-model').value.trim();
+                    const color = document.getElementById('inventory-color').value.trim();
+                    const quantity = parseInt(document.getElementById('inventory-quantity').value);
+    
+                    // 验证输入
+                    if (!model || !color || isNaN(quantity) || quantity < 0) {
+                        showNotification('输入错误', '请填写所有必填字段并确保数量为非负数', 'error');
+                        return;
+                    }
+    
+                    // 创建库存记录
+                    const newInventory = {
+                        id: Date.now().toString(),
+                        model,
+                        color,
+                        quantity,
+                        updated_at: new Date().toISOString()
+                    };
+    
+                    // 添加到本地存储
+                    inventory.push(newInventory);
+                    localStorage.setItem('inventory', JSON.stringify(inventory));
+    
+                    // 刷新库存列表
+                    renderInventoryList();
+    
+                    // 关闭模态框
+                    addInventoryModal.classList.add('hidden');
+                    addInventoryForm.reset();
+    
+                    // 显示成功通知
+                    showNotification('添加成功', '库存记录已添加', 'success');
+                });
+            }
             
 
             
@@ -4206,7 +4406,7 @@
                         renderProducts();
                         
                         // 添加操作日志
-                        addOperationLog('清除数据', '清除了所有产品数据');
+
                         
                         // 显示成功通知
                         showNotification('清除成功', '所有产品数据已清除', 'success');
@@ -4289,60 +4489,14 @@
                     // 显示成功通知
                     showNotification('导出成功', `已导出 ${logsToExport.length} 条日志记录`, 'success');
                     
-                    // 添加操作日志
-                    addOperationLog('系统操作', `导出了 ${logsToExport.length} 条操作日志`);
+
                 } catch (error) {
                     console.error('导出日志失败:', error);
                     showNotification('导出失败', '导出日志时发生错误', 'error');
                 }
             });
             
-            // 清除操作日志
-            document.getElementById('clear-logs').addEventListener('click', function() {
-                const logType = document.getElementById('log-type-filter').value;
-                
-                // 确定要清除的日志范围
-                let logsToClear = [...operationLogs];
-                let clearTitle = '清除操作日志';
-                let clearMessage = '您确定要清除所有操作日志吗？此操作不可恢复！';
-                
-                if (logType !== 'all') {
-                    // 应用筛选条件
-                    logsToClear = logsToClear.filter(log => log.type === logType);
-                    clearMessage = `您确定要清除符合当前筛选条件的 ${logsToClear.length} 条操作日志吗？此操作不可恢复！`;
-                }
-                
-                // 显示自定义确认对话框
-                showConfirmDialog(clearTitle, clearMessage, function(confirmed) {
-                    if (confirmed) {
-                    try {
-                        if (logType !== 'all') {
-                            // 清除符合条件的日志
-                            operationLogs = operationLogs.filter(log => log.type !== logType);
-                        } else {
-                            // 清除所有日志
-                            operationLogs = [];
-                        }
-                        
-                        saveData('operationLogs', operationLogs);
-                        
-                        // 刷新日志列表
-                        renderOperationLogs();
-                        
-                        // 显示成功通知
-                        showNotification('清除成功', `已清除 ${logsToClear.length} 条操作日志`, 'success');
-                        
-                        // 添加操作日志（如果不是清除所有日志）
-                        if (operationLogs.length > 0) {
-                            addOperationLog('清除数据', `清除了 ${logsToClear.length} 条操作日志`);
-                        }
-                    } catch (error) {
-                        console.error('清除操作日志失败:', error);
-                        showNotification('清除失败', '清除操作日志时发生错误', 'error');
-                    }
-                }
-            });
-            });
+
             
 
         }
@@ -4387,7 +4541,7 @@
                     applyUserPermissions(user);
                     
                     // 记录登录日志
-                    addOperationLog('system', `用户登录: ${user.username}`);
+
                     
                     console.log('登录成功:', user.name || user.username);
                 } else {
@@ -4442,7 +4596,7 @@
                 
                 // 记录退出登录日志（使用同步方式，避免异步错误）
                 try {
-                    addOperationLog('system', '用户退出登录');
+
                 } catch (logError) {
                     console.warn('记录日志失败:', logError.message);
                 }
@@ -4685,7 +4839,7 @@
                             showNotification('添加成功', '产品已成功添加', 'success');
                             
                             // 记录操作日志
-                            addOperationLog('product', `添加产品: ${name}`);
+
                         } catch (error) {
                             console.error('处理上传图片时发生错误:', error);
                             showNotification('添加失败', '处理图片时发生错误', 'error');
@@ -4753,7 +4907,7 @@
                 
                 // 记录操作日志
                 console.log('记录产品添加日志:', name);
-                addOperationLog('product', `添加产品: ${name}`);
+
             } catch (error) {
                 console.error('添加产品失败:', error.message);
                 showNotification('添加失败', '添加产品时发生错误', 'error');
@@ -4913,7 +5067,7 @@
                             showNotification('更新成功', '产品信息已成功更新', 'success');
                             
                             // 记录操作日志
-                            addOperationLog('product', `更新产品: ${name}`);
+
                         } catch (error) {
                             console.error('处理上传图片时发生错误:', error);
                             showNotification('更新失败', '处理图片时发生错误', 'error');
@@ -4959,7 +5113,7 @@
                 showNotification('更新成功', '产品信息已成功更新', 'success');
                 
                 // 记录操作日志
-                addOperationLog('product', `更新产品: ${name}`);
+
             } catch (error) {
                 console.error('更新产品失败:', error.message);
                 showNotification('更新失败', '产品更新失败，请重试', 'error');
@@ -4994,7 +5148,7 @@
                         showNotification('删除成功', '产品已成功删除', 'success');
                         
                         // 记录操作日志
-                        addOperationLog('product', `删除产品: ${productName}`);
+
                     } catch (error) {
                         console.error('删除产品失败:', error.message);
                         showNotification('删除失败', '删除产品时发生错误', 'error');
@@ -5133,7 +5287,7 @@
                 showNotification('添加成功', '用户已成功添加', 'success');
                 
                 // 记录操作日志
-                addOperationLog('添加用户', `添加了用户: ${username}`);
+
             } catch (error) {
                 console.error('添加用户失败:', error);
                 showNotification('添加失败', '添加用户时发生错误: ' + error.message, 'error');
@@ -5213,7 +5367,7 @@
                 showNotification('更新成功', '用户信息已成功更新', 'success');
                 
                 // 记录操作日志
-                addOperationLog('user', `更新用户: ${username}`);
+
             } catch (error) {
                 console.error('更新用户失败:', error.message);
                 showNotification('更新失败', '用户更新失败，请重试', 'error');
@@ -5260,7 +5414,7 @@
                         showNotification('删除成功', '用户已成功删除', 'success');
                         
                         // 记录操作日志
-                        addOperationLog('user', `删除用户: ${username}`);
+
                     } catch (error) {
                         console.error('删除用户失败:', error.message);
                         showNotification('删除失败', '删除用户时发生错误', 'error');
@@ -6569,7 +6723,7 @@
             renderCalculationHistory();
             
             // 记录操作日志
-            addOperationLog('calculation', `${data.type}计算`);
+
         }
         
         // 渲染计算历史
@@ -6650,181 +6804,13 @@
                     localStorage.removeItem('calculationHistory');
                     renderCalculationHistory();
                     showNotification('清空成功', '计算历史已成功清空', 'success');
-                    addOperationLog('calculation', '清空计算历史');
+
                 }
             );
         }
         
         // 渲染操作日志
-        function renderOperationLogs() {
-            const container = document.getElementById('logs-list');
-            const noLogs = document.getElementById('no-logs');
-            
-            // 清空容器
-            container.innerHTML = '';
-            
-            // 筛选日志
-            let filteredLogs = operationLogs;
-            if (currentLogFilter !== 'all') {
-                filteredLogs = operationLogs.filter(log => log.type === currentLogFilter);
-            }
-            
-            // 检查是否有日志
-            if (filteredLogs.length === 0) {
-                container.classList.add('hidden');
-                noLogs.classList.remove('hidden');
-                return;
-            }
-            
-            // 显示日志列表
-            container.classList.remove('hidden');
-            noLogs.classList.add('hidden');
-            
-            // 渲染日志行
-            filteredLogs.forEach(log => {
-                const row = document.createElement('tr');
-                
-                // 设置行内容
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="badge ${getLogTypeBadgeClass(log.type)}">${getLogTypeText(log.type)}</span>
-                    </td>
-                    <td class="px-6 py-4">
-                        <div class="text-sm text-dark-2">${log.content}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-dark-2">${log.user || '系统'}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-dark-3">
-                        ${formatDate(log.timestamp)}
-                    </td>
-                `;
-                
-                container.appendChild(row);
-            });
-        }
-        
-        // 渲染筛选后的日志
-        function renderFilteredLogs(filteredLogs) {
-            const container = document.getElementById('logs-list');
-            const noLogs = document.getElementById('no-logs');
-            
-            // 清空容器
-            container.innerHTML = '';
-            
-            // 检查是否有日志
-            if (filteredLogs.length === 0) {
-                container.classList.add('hidden');
-                noLogs.classList.remove('hidden');
-                return;
-            }
-            
-            // 显示日志列表
-            container.classList.remove('hidden');
-            noLogs.classList.add('hidden');
-            
-            // 渲染日志行
-            filteredLogs.forEach(log => {
-                const row = document.createElement('tr');
-                
-                // 设置行内容
-                row.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="badge ${getLogTypeBadgeClass(log.type)}">${getLogTypeText(log.type)}</span>
-                    </td>
-                    <td class="px-6 py-4">
-                        <div class="text-sm text-dark-2">${log.content}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-dark-2">${log.user || '系统'}</div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-dark-3">
-                        ${formatDate(log.timestamp)}
-                    </td>
-                `;
-                
-                container.appendChild(row);
-            });
-        }
-        
-        // 获取日志类型标签样式
-        function getLogTypeBadgeClass(type) {
-            switch (type) {
-                case 'product':
-                    return 'badge-primary';
-                case 'user':
-                    return 'badge-secondary';
-                case 'calculation':
-                    return 'badge-success';
-                case 'system':
-                    return 'badge-warning';
-                default:
-                    return 'badge-secondary';
-            }
-        }
-        
-        // 获取日志类型文本
-        function getLogTypeText(type) {
-            switch (type) {
-                case 'product':
-                    return '产品操作';
-                case 'user':
-                    return '用户操作';
-                case 'calculation':
-                    return '计算操作';
-                case 'system':
-                    return '系统操作';
-                default:
-                    return '其他操作';
-            }
-        }
-        
-        // 添加操作日志
-        async function addOperationLog(type, content) {
-            try {
-                console.log('开始添加操作日志:', { type, content });
-                
-                const log = {
-                    id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                    type,
-                    content,
-                    user: currentUser ? currentUser.username : '系统',
-                    timestamp: new Date().toISOString()
-                };
-                
-                console.log('创建日志对象:', log);
-                
-                operationLogs.unshift(log);
-                console.log('日志已添加到数组，当前日志数量:', operationLogs.length);
-                
-                // 限制日志数量
-                if (operationLogs.length > 100) {
-                    operationLogs = operationLogs.slice(0, 100);
-                    console.log('日志数量超过限制，已截取前100条');
-                }
-                
-                // 保存到本地存储（添加额外的保存逻辑）
-                try {
-                    localStorage.setItem('operationLogs', JSON.stringify(operationLogs));
-                    console.log('日志已保存到本地存储');
-                } catch (localStorageError) {
-                    console.error('保存到本地存储失败:', localStorageError);
-                }
-                
-                // 保存到Supabase
-                await saveData('operationLogs', operationLogs);
-                console.log('日志已保存到数据存储');
-                
-                // 强制更新日志显示，无论当前是否在日志页面
-                renderOperationLogs();
-                console.log('日志列表已更新');
-                
-                return true;
-            } catch (error) {
-                console.error('添加操作日志失败:', error.message);
-                return false;
-            }
-        }
+
         
 
         
@@ -6898,7 +6884,7 @@
                 showNotification('清除成功', '所有数据已成功清除', 'success');
                 
                 // 记录操作日志
-                addOperationLog('system', '清除所有数据');
+
             } catch (error) {
                 console.error('清除数据失败:', error.message);
                 showNotification('清除失败', '清除数据时发生错误', 'error');
@@ -6925,7 +6911,7 @@
                 link.click();
                 
                 showNotification('导出成功', '数据已成功导出', 'success');
-                addOperationLog('system', '导出数据');
+
             } catch (error) {
                 console.error('导出数据失败:', error.message);
                 showNotification('导出失败', '导出数据时发生错误', 'error');
@@ -6963,11 +6949,11 @@
                                 renderProducts();
                                 renderUsers();
                                 renderCalculationHistory();
-                                renderOperationLogs();
+        
                                 
                                 // 显示成功通知
                                 showNotification('导入成功', '数据已成功导入', 'success');
-                                addOperationLog('system', '导入数据');
+
                             } catch (error) {
                                 console.error('导入数据失败:', error.message);
                                 showNotification('导入失败', '导入数据时发生错误', 'error');
@@ -7023,7 +7009,7 @@
                 link.click();
                 
                 showNotification('导出成功', '产品数据已成功导出', 'success');
-                addOperationLog('system', '导出产品数据');
+
             } catch (error) {
                 console.error('导出产品数据失败:', error.message);
                 showNotification('导出失败', '导出产品数据时发生错误', 'error');
@@ -7061,7 +7047,7 @@
                                 
                                 // 显示成功通知
                                 showNotification('导入成功', `成功导入 ${data.products.length} 个产品`, 'success');
-                                addOperationLog('system', `导入产品数据，共 ${data.products.length} 个产品`);
+
                             } catch (error) {
                                 console.error('导入产品数据失败:', error.message);
                                 showNotification('导入失败', '导入产品数据时发生错误', 'error');
@@ -7120,7 +7106,7 @@
                 link.click();
                 
                 showNotification('导出成功', '产品数据已成功导出为CSV格式', 'success');
-                addOperationLog('system', '导出产品数据CSV格式');
+
             } catch (error) {
                 console.error('导出CSV失败:', error.message);
                 showNotification('导出失败', '导出CSV格式时发生错误', 'error');
@@ -7215,7 +7201,7 @@
                                 
                                 // 显示成功通知
                                 showNotification('导入成功', `成功导入 ${importedProducts.length} 个产品`, 'success');
-                                addOperationLog('system', `导入产品数据CSV格式，共 ${importedProducts.length} 个产品`);
+
                             } catch (error) {
                                 console.error('导入产品数据失败:', error.message);
                                 showNotification('导入失败', '导入产品数据时发生错误', 'error');
@@ -7242,7 +7228,7 @@
                 renderProducts();
                 
                 showNotification('清除成功', `已成功清除 ${productCount} 个产品数据`, 'success');
-                addOperationLog('system', `清除所有产品数据，共 ${productCount} 个产品`);
+
             } catch (error) {
                 console.error('清除产品数据失败:', error.message);
                 showNotification('清除失败', '清除产品数据时发生错误', 'error');
